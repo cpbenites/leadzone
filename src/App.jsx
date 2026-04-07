@@ -3,8 +3,11 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
-import { AuthProvider, useAuth } from '@/lib/AuthContext';
-import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import { Outlet } from 'react-router-dom';
+import Layout from './components/Layout';
+import Dashboard from './pages/Dashboard';
+import Funil from './pages/Funil';
+import Configuraciones from './pages/Configuraciones';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -33,7 +36,11 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <Routes>
-      {/* Add your page Route elements here */}
+      <Route element={<Layout><Outlet /></Layout>}>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/funil" element={<Funil />} />
+        <Route path="/configuraciones" element={<Configuraciones />} />
+      </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
