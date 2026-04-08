@@ -23,17 +23,14 @@ Deno.serve(async (req) => {
     const textQuery = `${nicho} en ${ciudad}, ${estado}, ${pais}`;
     let allPlaces = [];
     let pageToken = null;
-    let isFirstRequest = true;
 
     do {
-      // Google requires a delay before using a pageToken
       if (pageToken) {
         await new Promise(r => setTimeout(r, 2000));
       }
 
-      const requestBody = isFirstRequest
-        ? { textQuery, maxResultCount: 20, languageCode: 'es' }
-        : { pageToken };
+      const requestBody = { textQuery, maxResultCount: 20, languageCode: 'es' };
+      if (pageToken) requestBody.pageToken = pageToken;
 
       const response = await fetch('https://places.googleapis.com/v1/places:searchText', {
         method: 'POST',
@@ -48,14 +45,16 @@ Deno.serve(async (req) => {
       const data = await response.json();
 
       if (!response.ok) {
-        // If we already have some results, return them instead of failing
         if (allPlaces.length > 0) break;
         return Response.json({ error: data.error?.message || 'Error en Google Places API' }, { status: 500 });
       }
 
-      allPlaces = [...allPlaces, ...(data.places || [])];
+      const newPlaces = data.places || [];
+      allPlaces = [...allPlaces, ...newPlaces];
       pageToken = data.nextPageToken || null;
-      isFirstRequest = false;
+
+      // Stop if no new results to avoid infinite loop
+      if (newPlaces.length === 0) break;
 
     } while (pageToken);
 
