@@ -23,56 +23,47 @@ const PLAN_COLORS = {
 
 export default function Admin() {
   const { toast } = useToast();
-  const [currentUser, setCurrentUser] = useState(null);
   const [users, setUsers] = useState([]);
-  const [userPlans, setUserPlans] = useState({});
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(null);
   const [saving, setSaving] = useState({});
 
   useEffect(() => {
     const load = async () => {
       const me = await base44.auth.me();
-      setCurrentUser(me);
       if (me?.role !== "admin") {
+        setIsAdmin(false);
         setLoading(false);
         return;
       }
-      const [usersData, plansData] = await Promise.all([
-        base44.entities.User.list(),
-        base44.asServiceRole.entities.UserPlan.list(),
-      ]);
-      setUsers(usersData);
-      const plansMap = {};
-      plansData.forEach(p => { plansMap[p.user_email] = p; });
-      setUserPlans(plansMap);
+      setIsAdmin(true);
+      const res = await base44.functions.invoke("getAdminUsers", {});
+      setUsers(res.data.users || []);
       setLoading(false);
     };
     load();
   }, []);
 
-  const handlePlanChange = async (userEmail, newPlan, planId) => {
-    setSaving(prev => ({ ...prev, [userEmail]: true }));
+  const handlePlanChange = async (user, newPlan) => {
+    setSaving(prev => ({ ...prev, [user.email]: true }));
     try {
-      if (planId) {
-        await base44.asServiceRole.entities.UserPlan.update(planId, { plan: newPlan });
-      } else {
-        const created = await base44.asServiceRole.entities.UserPlan.create({
-          user_email: userEmail,
-          plan: newPlan,
-          searches_today: 0,
-          searches_this_month: 0,
-        });
-        setUserPlans(prev => ({ ...prev, [userEmail]: created }));
-      }
-      setUserPlans(prev => ({
-        ...prev,
-        [userEmail]: { ...prev[userEmail], plan: newPlan },
-      }));
-      toast({ title: "Plan actualizado", description: `Plan de ${userEmail} cambiado a ${PLAN_LABELS[newPlan]}.` });
+      const res = await base44.functions.invoke("updateUserPlan", {
+        userEmail: user.email,
+        newPlan,
+        planId: user.plan?.id || null,
+      });
+      setUsers(prev =>
+        prev.map(u =>
+          u.email === user.email
+            ? { ...u, plan: res.data.plan }
+            : u
+        )
+      );
+      toast({ title: "Plan actualizado", description: `${user.email} → ${PLAN_LABELS[newPlan]}` });
     } catch (e) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
     } finally {
-      setSaving(prev => ({ ...prev, [userEmail]: false }));
+      setSaving(prev => ({ ...prev, [user.email]: false }));
     }
   };
 
@@ -84,7 +75,7 @@ export default function Admin() {
     );
   }
 
-  if (currentUser?.role !== "admin") {
+  if (!isAdmin) {
     return (
       <div className="flex flex-col items-center justify-center py-32 text-center px-6">
         <Shield className="w-12 h-12 text-muted-foreground mb-4 opacity-40" />
@@ -102,7 +93,7 @@ export default function Admin() {
         </div>
         <div>
           <h1 className="text-2xl font-bold text-foreground">Panel de Administración</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Gestiona los planes de los usuarios registrados</p>
+          <p className="text-muted-foreground text-sm mt-0.5">{users.length} usuario(s) registrado(s)</p>
         </div>
       </div>
 
@@ -119,8 +110,7 @@ export default function Admin() {
 
         <div className="divide-y divide-border">
           {users.map((user, idx) => {
-            const plan = userPlans[user.email];
-            const currentPlan = plan?.plan || "free";
+            const currentPlan = user.plan?.plan || "free";
             const isSaving = saving[user.email];
 
             return (
@@ -144,7 +134,7 @@ export default function Admin() {
                 </div>
 
                 <div className="col-span-2 text-center">
-                  <span className="text-sm font-semibold text-foreground">{plan?.searches_this_month || 0}</span>
+                  <span className="text-sm font-semibold text-foreground">{user.plan?.searches_this_month || 0}</span>
                 </div>
 
                 <div className="col-span-2">
@@ -152,14 +142,14 @@ export default function Admin() {
                     <select
                       value={currentPlan}
                       disabled={isSaving}
-                      onChange={e => handlePlanChange(user.email, e.target.value, plan?.id)}
+                      onChange={e => handlePlanChange(user, e.target.value)}
                       className={`w-full appearance-none text-xs font-semibold px-3 py-2 pr-7 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 cursor-pointer ${PLAN_COLORS[currentPlan]}`}
                     >
                       {PLANS.map(p => (
                         <option key={p} value={p}>{PLAN_LABELS[p]}</option>
                       ))}
                     </select>
-                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none text-current opacity-60" />
+                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none opacity-60" />
                     {isSaving && (
                       <div className="absolute inset-0 flex items-center justify-center bg-background/70 rounded-lg">
                         <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
