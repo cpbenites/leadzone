@@ -166,21 +166,21 @@ export default function Dashboard() {
         {/* Plan badge */}
         {userPlanInfo && (
           <div className="flex items-center gap-2 bg-card border border-border rounded-xl px-4 py-2 text-xs">
-            <span className="font-semibold text-foreground capitalize">{userPlanInfo.plan === "free" ? "Plano Gratuito" : `Plano ${userPlanInfo.plan}`}</span>
+            <span className="font-semibold text-foreground capitalize">{userPlanInfo.plan === "free" ? "Plan Gratuito" : `Plan ${userPlanInfo.plan}`}</span>
             {userPlanInfo.plan === "free" ? (
-              <span className="text-muted-foreground">
-                {3 - (userPlanInfo.searches_today || 0)} buscas restantes hoje
+            <span className="text-muted-foreground">
+              {3 - (userPlanInfo.searches_today || 0)} búsquedas restantes hoy
               </span>
             ) : (
               <span className="text-muted-foreground">
-                {userPlanInfo.searches_this_month || 0}/{userPlanInfo.monthly_limit} buscas este mês
+                {userPlanInfo.searches_this_month || 0}/{userPlanInfo.monthly_limit} búsquedas este mes
               </span>
             )}
             <button
               onClick={() => { setUpgradeReason(""); setShowUpgrade(true); }}
               className="ml-1 text-primary font-semibold hover:underline"
             >
-              Upgrade
+              Mejorar Plan
             </button>
           </div>
         )}
@@ -302,13 +302,13 @@ export default function Dashboard() {
                 }`}
               >
                 {isFree ? <Lock className="w-4 h-4" /> : loadingMore ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                {isFree ? "Carregar Mais — Faça Upgrade" : loadingMore ? "Cargando más leads..." : "Carregar Mais Leads"}
+                {isFree ? "Cargar Más — Mejora tu Plan" : loadingMore ? "Cargando más leads..." : "Cargar Más Leads"}
               </button>
               {isFree && (
-                <p className="text-xs text-muted-foreground">Plano gratuito: apenas 20 resultados por busca</p>
+                <p className="text-xs text-muted-foreground">Plan gratuito: solo 20 resultados por búsqueda</p>
               )}
               {!isFree && (
-                <p className="text-xs text-muted-foreground">Buscando mais establecimientos em {ciudad}</p>
+                <p className="text-xs text-muted-foreground">Buscando más establecimientos en {ciudad}</p>
               )}
             </div>
           )}

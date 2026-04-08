@@ -5,42 +5,42 @@ const PLANS = [
     id: "starter",
     name: "Starter",
     price: "$12",
-    period: "/mês",
+    period: "/mes",
     icon: Zap,
     color: "text-blue-500",
     bg: "bg-blue-50 border-blue-200",
-    features: ["120 buscas/mês", "Paginação completa", "Suporte por email"],
+    features: ["120 búsquedas/mes", "Paginación completa", "Soporte por email"],
   },
   {
     id: "pro",
     name: "Pro",
     price: "$25",
-    period: "/mês",
+    period: "/mes",
     icon: Star,
     color: "text-purple-500",
     bg: "bg-purple-50 border-purple-200",
     popular: true,
-    features: ["300 buscas/mês", "Paginação completa", "CRM completo", "Suporte prioritário"],
+    features: ["300 búsquedas/mes", "Paginación completa", "CRM completo", "Soporte prioritario"],
   },
   {
     id: "pro_max",
     name: "Pro Max",
     price: "$49",
-    period: "/mês",
+    period: "/mes",
     icon: Rocket,
     color: "text-orange-500",
     bg: "bg-orange-50 border-orange-200",
-    features: ["800 buscas/mês", "Tudo do Pro", "Exportar CSV"],
+    features: ["800 búsquedas/mes", "Todo lo del Pro", "Exportar CSV"],
   },
   {
     id: "enterprise",
     name: "Enterprise",
     price: "$99",
-    period: "/mês",
+    period: "/mes",
     icon: Building2,
     color: "text-amber-600",
     bg: "bg-amber-50 border-amber-200",
-    features: ["1500+ buscas/mês", "Tudo do Pro Max", "API access", "Suporte dedicado"],
+    features: ["1500+ búsquedas/mes", "Todo lo del Pro Max", "API access", "Soporte dedicado"],
   },
 ];
 
@@ -50,7 +50,7 @@ export default function UpgradeModal({ onClose, reason }) {
       <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto animate-fade-in">
         <div className="flex items-center justify-between p-6 border-b border-border">
           <div>
-            <h2 className="text-xl font-bold text-foreground">Faça Upgrade do seu Plano</h2>
+            <h2 className="text-xl font-bold text-foreground">Mejora tu Plan</h2>
             {reason && <p className="text-sm text-muted-foreground mt-1">{reason}</p>}
           </div>
           <button onClick={onClose} className="p-2 hover:bg-secondary rounded-lg transition-colors">
@@ -91,9 +91,9 @@ export default function UpgradeModal({ onClose, reason }) {
                         ? "bg-primary text-primary-foreground hover:bg-primary/90"
                         : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
                     }`}
-                    onClick={() => alert(`Contate o administrador para ativar o plano ${plan.name}.`)}
+                    onClick={() => alert(`Contacta al administrador para activar el plan ${plan.name}.`)}>
                   >
-                    Escolher Plano
+                    Elegir Plan
                   </button>
                 </div>
               );
