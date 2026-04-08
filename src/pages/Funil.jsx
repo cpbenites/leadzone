@@ -19,11 +19,18 @@ function KanbanCard({ lead, index, onDelete }) {
     ? `https://wa.me/${lead.telefono.replace(/\D/g, "")}`
     : null;
 
+  // Cria a URL de pesquisa exata no Google Maps com o nome da empresa e a localização
+  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lead.nombre_empresa + " " + (lead.direccion || lead.ciudad))}`;
+
   const handleCopy = (e) => {
     e.stopPropagation();
     navigator.clipboard.writeText(lead.nombre_empresa);
     setCopied(true);
-    toast({ title: "Copiado", description: "Nombre de la empresa copiado al portapapeles." });
+    toast({ 
+      title: "Copiado", 
+      description: "Nombre de la empresa copiado.",
+      duration: 2500 // Reduzido para fechar automaticamente mais rápido
+    });
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -41,7 +48,6 @@ function KanbanCard({ lead, index, onDelete }) {
           <div className="flex items-start justify-between gap-2 mb-1.5">
             <h3 className="font-semibold text-xs text-foreground leading-tight flex-1">{lead.nombre_empresa}</h3>
             
-            {/* Ações de Hover (Copiar e Excluir) */}
             <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
               <button 
                 onClick={handleCopy} 
@@ -69,9 +75,17 @@ function KanbanCard({ lead, index, onDelete }) {
           <div className="space-y-1.5 mb-3">
             <div className="flex items-start gap-1.5">
                 <MapPin className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
-              <span className="text-xs text-muted-foreground leading-tight">
+              {/* Endereço agora é clicável e abre no Google Maps */}
+              <a 
+                href={googleMapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()} // Impede que arraste o card ao clicar no link
+                className="text-xs text-muted-foreground leading-tight hover:text-primary hover:underline cursor-pointer"
+                title="Ver perfil en Google Maps"
+              >
                 {lead.direccion || `${lead.ciudad}, ${lead.estado}`}
-              </span>
+              </a>
             </div>
             {lead.telefono && (
               <div className="flex items-center gap-1.5">
@@ -92,7 +106,7 @@ function KanbanCard({ lead, index, onDelete }) {
               href={whatsapp}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()} // Previne drag ao clicar no link
+              onClick={(e) => e.stopPropagation()}
               className="flex items-center justify-center gap-1.5 w-full py-1.5 rounded-lg bg-green-500/10 text-green-600 border border-green-500/20 text-xs font-bold hover:bg-green-500 hover:text-white transition-all"
             >
               <MessageCircle className="w-3.5 h-3.5" />
