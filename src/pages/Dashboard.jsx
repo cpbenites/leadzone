@@ -3,6 +3,7 @@ import { Search, MapPin, ChevronDown, Loader2, AlertCircle, Building2 } from "lu
 import { base44 } from "@/api/base44Client";
 import { LOCATIONS } from "../data/locations";
 import LeadCard from "../components/LeadCard";
+import NichoSuggester from "../components/NichoSuggester";
 import { useToast } from "@/components/ui/use-toast";
 
 export default function Dashboard() {
@@ -72,6 +73,8 @@ export default function Dashboard() {
         <h1 className="text-2xl font-bold text-foreground">Dashboard de Prospección</h1>
         <p className="text-muted-foreground mt-1 text-sm">Encuentra clientes potenciales en tu ciudad objetivo</p>
       </div>
+
+      <NichoSuggester onSelectNicho={(s) => setNicho(s)} />
 
       {/* Filters Card */}
       <div className="bg-card border border-border rounded-2xl p-6 mb-8 shadow-sm">
