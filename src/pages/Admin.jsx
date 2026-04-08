@@ -1,7 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-
-import { Shield, Loader2, ChevronDown, X } from "lucide-react";
+import { Shield, Loader2, ChevronDown, X, CheckCircle, AlertCircle } from "lucide-react";
 
 const PLANS = ["free", "starter", "pro", "pro_max", "enterprise"];
 
@@ -27,6 +26,14 @@ export default function Admin() {
   const [isAdmin, setIsAdmin] = useState(null);
   const [saving, setSaving] = useState({});
   const [confirm, setConfirm] = useState(null); // { user, newPlan }
+  const [notification, setNotification] = useState(null); // { type, message }
+  const notifTimer = useRef(null);
+
+  const showNotification = (type, message) => {
+    clearTimeout(notifTimer.current);
+    setNotification({ type, message });
+    notifTimer.current = setTimeout(() => setNotification(null), 3000);
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -65,9 +72,9 @@ export default function Admin() {
           u.email === user.email ? { ...u, plan: res.data.plan } : u
         )
       );
-
+      showNotification("success", `${user.email} → ${PLAN_LABELS[newPlan]}`);
     } catch (e) {
-      console.error(e.message);
+      showNotification("error", e.message);
     } finally {
       setSaving(prev => ({ ...prev, [user.email]: false }));
     }
@@ -93,6 +100,26 @@ export default function Admin() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
+      {/* Inline Notification */}
+      {notification && (
+        <div className={`fixed bottom-6 right-6 z-50 flex items-start gap-3 px-4 py-3 rounded-xl shadow-lg border max-w-sm ${
+          notification.type === "success"
+            ? "bg-white border-green-200 text-green-800"
+            : "bg-white border-red-200 text-red-800"
+        }`}>
+          {notification.type === "success"
+            ? <CheckCircle className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
+            : <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+          }
+          <div className="flex-1">
+            <p className="text-xs font-semibold">{notification.type === "success" ? "Plan actualizado" : "Error"}</p>
+            <p className="text-xs opacity-80">{notification.message}</p>
+          </div>
+          <button onClick={() => { clearTimeout(notifTimer.current); setNotification(null); }} className="p-0.5 hover:opacity-60 transition-opacity">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
       {/* Confirmation Modal */}
       {confirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
