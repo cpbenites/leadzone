@@ -3,6 +3,16 @@ import { base44 } from "@/api/base44Client";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { Phone, MapPin, Star, MessageCircle, Loader2, Trash2, Copy, Check } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const COLUMNS = [
   { id: "nuevos_leads", label: "Nuevos Leads", color: "bg-blue-500", light: "bg-blue-50 border-blue-100" },
@@ -129,6 +139,7 @@ export default function Funil() {
   const { toast } = useToast();
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [leadToDelete, setLeadToDelete] = useState(null);
 
   useEffect(() => {
     fetchLeads();
@@ -141,15 +152,21 @@ export default function Funil() {
     });
   };
 
-  const handleDeleteLead = async (id) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar este lead? Esta acción no se puede deshacer.")) return;
+  const handleDeleteLead = (id) => {
+    setLeadToDelete(id); // Apenas abre o modal
+  };
+
+  const confirmDelete = async () => {
+    if (!leadToDelete) return;
     
     try {
-      await base44.entities.SavedLead.delete(id);
-      setLeads(prev => prev.filter(l => l.id !== id));
+      await base44.entities.SavedLead.delete(leadToDelete);
+      setLeads(prev => prev.filter(l => l.id !== leadToDelete));
       toast({ title: "Lead eliminado correctamente." });
     } catch (e) {
       toast({ title: "Error al eliminar", description: e.message, variant: "destructive" });
+    } finally {
+      setLeadToDelete(null); // Fecha o modal após o sucesso ou erro
     }
   };
 
@@ -229,6 +246,23 @@ export default function Funil() {
           })}
         </div>
       </DragDropContext>
+
+      <AlertDialog open={!!leadToDelete} onOpenChange={(open) => !open && setLeadToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás completamente seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Esto eliminará permanentemente el lead de tu embudo y no podrás recuperarlo.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-500 hover:bg-red-600 focus:ring-red-500">
+              Sí, eliminar lead
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
