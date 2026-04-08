@@ -60,7 +60,6 @@ export default function Dashboard() {
         status_funil: "nuevos_leads"
       });
       setSavedIds(prev => new Set([...prev, lead.place_id || lead.nombre_empresa]));
-      toast({ title: "¡Lead guardado!", description: `${lead.nombre_empresa} agregado a tu embudo.` });
     } catch (e) {
       toast({ title: "Error al guardar", description: e.message, variant: "destructive" });
     }
