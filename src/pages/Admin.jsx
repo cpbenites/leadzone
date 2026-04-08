@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
-import { Shield, Loader2, ChevronDown } from "lucide-react";
+import { Shield, Loader2, ChevronDown, X } from "lucide-react";
 
 const PLANS = ["free", "starter", "pro", "pro_max", "enterprise"];
 
@@ -27,6 +27,7 @@ export default function Admin() {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(null);
   const [saving, setSaving] = useState({});
+  const [confirm, setConfirm] = useState(null); // { user, newPlan }
 
   useEffect(() => {
     const load = async () => {
@@ -44,7 +45,15 @@ export default function Admin() {
     load();
   }, []);
 
-  const handlePlanChange = async (user, newPlan) => {
+  const requestPlanChange = (user, newPlan) => {
+    if (newPlan === (user.plan?.plan || "free")) return;
+    setConfirm({ user, newPlan });
+  };
+
+  const handlePlanChange = async () => {
+    if (!confirm) return;
+    const { user, newPlan } = confirm;
+    setConfirm(null);
     setSaving(prev => ({ ...prev, [user.email]: true }));
     try {
       const res = await base44.functions.invoke("updateUserPlan", {
@@ -54,9 +63,7 @@ export default function Admin() {
       });
       setUsers(prev =>
         prev.map(u =>
-          u.email === user.email
-            ? { ...u, plan: res.data.plan }
-            : u
+          u.email === user.email ? { ...u, plan: res.data.plan } : u
         )
       );
       toast({ title: "Plan actualizado", description: `${user.email} → ${PLAN_LABELS[newPlan]}` });
@@ -87,6 +94,40 @@ export default function Admin() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
+      {/* Confirmation Modal */}
+      {confirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-card border border-border rounded-2xl shadow-2xl p-6 w-full max-w-sm mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-foreground text-base">Confirmar cambio de plan</h3>
+              <button onClick={() => setConfirm(null)} className="p-1.5 hover:bg-secondary rounded-lg transition-colors">
+                <X className="w-4 h-4 text-muted-foreground" />
+              </button>
+            </div>
+            <p className="text-sm text-muted-foreground mb-1">
+              Usuario: <span className="font-semibold text-foreground">{confirm.user.email}</span>
+            </p>
+            <p className="text-sm text-muted-foreground mb-6">
+              Nuevo plan: <span className="font-semibold text-foreground">{PLAN_LABELS[confirm.newPlan]}</span>
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirm(null)}
+                className="flex-1 py-2.5 rounded-xl border border-border text-sm font-semibold text-muted-foreground hover:bg-secondary transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handlePlanChange}
+                className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="mb-8 flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
           <Shield className="w-5 h-5 text-primary" />
@@ -142,7 +183,7 @@ export default function Admin() {
                     <select
                       value={currentPlan}
                       disabled={isSaving}
-                      onChange={e => handlePlanChange(user, e.target.value)}
+                      onChange={e => requestPlanChange(user, e.target.value)}
                       className={`w-full appearance-none text-xs font-semibold px-3 py-2 pr-7 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 cursor-pointer ${PLAN_COLORS[currentPlan]}`}
                     >
                       {PLANS.map(p => (
