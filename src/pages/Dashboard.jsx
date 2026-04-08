@@ -17,6 +17,8 @@ export default function Dashboard() {
   const [savedIds, setSavedIds] = useState(new Set());
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState("");
+  const [nextPageToken, setNextPageToken] = useState(null);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const paises = Object.keys(LOCATIONS);
   const estados = pais ? Object.keys(LOCATIONS[pais] || {}) : [];
@@ -35,13 +37,29 @@ export default function Dashboard() {
     setLeads([]);
     setSearched(true);
     setSavedIds(new Set());
+    setNextPageToken(null);
     try {
       const res = await base44.functions.invoke("searchLeads", { nicho: nicho.trim(), ciudad, estado, pais });
       setLeads(res.data.leads || []);
+      setNextPageToken(res.data.nextPageToken || null);
     } catch (e) {
       setError(e.message || "Error al buscar leads. Verifica tu API Key.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleLoadMore = async () => {
+    if (!nextPageToken) return;
+    setLoadingMore(true);
+    try {
+      const res = await base44.functions.invoke("searchLeads", { nicho: nicho.trim(), ciudad, estado, pais, pageToken: nextPageToken });
+      setLeads(prev => [...prev, ...(res.data.leads || [])]);
+      setNextPageToken(res.data.nextPageToken || null);
+    } catch (e) {
+      setError(e.message || "Error al cargar más leads.");
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -68,7 +86,6 @@ export default function Dashboard() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-foreground">Dashboard de Prospección</h1>
         <p className="text-muted-foreground mt-1 text-sm">Encuentra clientes potenciales en tu ciudad objetivo</p>
@@ -171,7 +188,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Results */}
+      {/* Empty state */}
       {!loading && searched && leads.length === 0 && !error && (
         <div className="text-center py-16 text-muted-foreground">
           <Building2 className="w-12 h-12 mx-auto mb-3 opacity-30" />
@@ -180,12 +197,16 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Results */}
       {leads.length > 0 && (
         <>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-foreground">{leads.length} leads encontrados</h2>
+            <h2 className="text-sm font-semibold text-foreground">
+              {nextPageToken ? "Más de 20 establecimientos encontrados" : `${leads.length} establecimientos encontrados`}
+            </h2>
             <span className="text-xs text-muted-foreground">{ciudad}, {estado}</span>
           </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {leads.map((lead, i) => (
               <LeadCard
@@ -196,6 +217,21 @@ export default function Dashboard() {
               />
             ))}
           </div>
+
+          {nextPageToken && (
+            <div className="flex justify-center mt-8">
+              <button
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                className="flex items-center gap-2 bg-secondary text-secondary-foreground hover:bg-secondary/80 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-60"
+              >
+                {loadingMore
+                  ? <><span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" /> Cargando...</>
+                  : "Buscar más establecimientos"
+                }
+              </button>
+            </div>
+          )}
         </>
       )}
     </div>
