@@ -1,5 +1,5 @@
 import { base44 } from "@/api/base44Client";
-import { MapPin, Clock, Route, Zap, ArrowRight, Check } from "lucide-react";
+import { MapPin, Clock, Route, Zap, ArrowRight, Check, Star } from "lucide-react";
 
 const PLANS = [
   {
@@ -93,6 +93,46 @@ const FEATURES = [
     title: "CRM Visual Integrado",
     desc: "Guarda tus leads y muévelos por un embudo de ventas intuitivo sin salir de la plataforma.",
   },
+];
+
+const TESTIMONIALS = [
+  {
+    name: "Carlos Mendoza",
+    role: "Director Comercial, TechB2B",
+    content: "Antes pasábamos horas buscando en Google Maps. Ahora, filtramos nuestra ciudad y en 2 minutos tenemos una lista lista para enviar WhatsApps. Nuestro equipo cierra el doble de reuniones.",
+    rating: 5
+  },
+  {
+    name: "Laura Gómez",
+    role: "Agente Independiente",
+    content: "El mejor SaaS de prospección que he probado. El hecho de que extraiga el número de teléfono directo me ha ahorrado días de trabajo. Se paga solo con la primera venta.",
+    rating: 5
+  },
+  {
+    name: "Diego Sánchez",
+    role: "CEO, Distribuidora Sur",
+    content: "Mapear restaurantes y cafeterías para nuestra distribución solía ser un dolor de cabeza. Con LeadZone, creamos rutas precisas en minutos. Brutal.",
+    rating: 5
+  }
+];
+
+const FAQS = [
+  {
+    q: "¿De dónde provienen los datos?",
+    a: "Extraemos información pública y actualizada en tiempo real directamente de motores de búsqueda y mapas (como Google), garantizando que los negocios sigan operando y los números estén activos."
+  },
+  {
+    q: "¿Funciona en mi país o ciudad?",
+    a: "Sí, LeadZone funciona en cualquier país de Latinoamérica y España. Solo tienes que buscar el país, estado y la ciudad exacta que deseas prospectar."
+  },
+  {
+    q: "¿Necesito tarjeta de crédito para el plan gratis?",
+    a: "No. Puedes crear tu cuenta y usar tus búsquedas diarias gratuitas sin introducir ningún método de pago. Empieza a prospectar al instante."
+  },
+  {
+    q: "¿Puedo cancelar o cambiar mi plan en cualquier momento?",
+    a: "Absolutamente. No hay contratos a largo plazo. Puedes subir de plan cuando tu equipo crezca o cancelar tu suscripción con un solo clic desde tu panel."
+  }
 ];
 
 export default function Landing() {
@@ -264,6 +304,34 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* DOBRA 4.5 — Prueba Social */}
+      <section className="py-20 px-6 bg-white">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-extrabold text-slate-900 mb-3">
+              Únete a cientos de equipos que ya no pierden tiempo
+            </h2>
+            <p className="text-slate-500 text-lg">Lo que dicen los profesionales que prospectan con LeadZone.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {TESTIMONIALS.map((t, i) => (
+              <div key={i} className="bg-slate-50 border border-slate-200 rounded-2xl p-6 shadow-sm">
+                <div className="flex items-center gap-1 mb-4">
+                  {[...Array(t.rating)].map((_, idx) => (
+                    <Star key={idx} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                  ))}
+                </div>
+                <p className="text-slate-600 text-sm leading-relaxed mb-6 italic">"{t.content}"</p>
+                <div>
+                  <h4 className="font-bold text-slate-900 text-sm">{t.name}</h4>
+                  <p className="text-slate-500 text-xs">{t.role}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* DOBRA 5 — Precios */}
       <section className="py-20 px-6 bg-slate-50" id="planes">
         <div className="max-w-6xl mx-auto text-center mb-12">
@@ -313,6 +381,26 @@ export default function Landing() {
               </button>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* DOBRA 5.5 — FAQ */}
+      <section className="py-20 px-6 bg-white">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-extrabold text-slate-900 mb-3">
+              Preguntas Frecuentes
+            </h2>
+            <p className="text-slate-500 text-lg">Todo lo que necesitas saber antes de empezar.</p>
+          </div>
+          <div className="grid gap-4">
+            {FAQS.map((faq, i) => (
+              <div key={i} className="bg-slate-50 border border-slate-100 rounded-2xl p-6 text-left">
+                <h3 className="font-bold text-slate-900 mb-2 text-base">{faq.q}</h3>
+                <p className="text-slate-600 text-sm leading-relaxed">{faq.a}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
