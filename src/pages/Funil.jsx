@@ -26,12 +26,18 @@ function KanbanCard({ lead, index, onDelete }) {
     e.stopPropagation();
     navigator.clipboard.writeText(lead.nombre_empresa);
     setCopied(true);
-    toast({ 
+    
+    // Capturamos a referência do toast criado
+    const { dismiss } = toast({ 
       title: "Copiado", 
-      description: "Nombre de la empresa copiado.",
-      duration: 2500 // Reduzido para fechar automaticamente mais rápido
+      description: "Nombre de la empresa copiado."
     });
-    setTimeout(() => setCopied(false), 2000);
+
+    // Restaurar ícone e fechar o toast após 2.5s
+    setTimeout(() => {
+      setCopied(false);
+      dismiss(); // Força o fechamento do toast específico
+    }, 2500);
   };
 
   return (
