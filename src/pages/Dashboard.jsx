@@ -136,7 +136,7 @@ export default function Dashboard() {
         <button onClick={handleSearch} disabled={loading}
           className="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-primary/90 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed shadow-sm">
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-          {loading ? "Buscando leads..." : "Buscar Leads en la Ciudad"}
+          {loading ? "Buscando todos los establecimientos..." : "Buscar Leads en la Ciudad"}
         </button>
       </div>
 
