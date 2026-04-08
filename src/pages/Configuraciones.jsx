@@ -5,33 +5,53 @@ import { useToast } from "@/components/ui/use-toast";
 
 const PLANS = [
   {
+    id: "free",
+    name: "Gratuito",
+    price: "$0",
+    period: "/mes",
+    icon: Zap,
+    color: "text-slate-500",
+    features: ["3 búsquedas/día", "20 resultados por búsqueda", "Embudo CRM básico"],
+    popular: false
+  },
+  {
     id: "starter",
     name: "Starter",
-    price: "$29",
+    price: "$12",
     period: "/mes",
     icon: Zap,
     color: "text-blue-500",
-    features: ["500 búsquedas/mes", "1 usuario", "Embudo CRM básico", "Soporte por email"],
+    features: ["120 búsquedas/mes", "Paginación completa", "Soporte por email"],
     popular: false
   },
   {
     id: "pro",
     name: "Pro",
-    price: "$79",
+    price: "$25",
     period: "/mes",
     icon: Star,
     color: "text-purple-500",
-    features: ["5.000 búsquedas/mes", "5 usuarios", "CRM completo", "Exportar a CSV", "Soporte prioritario"],
+    features: ["300 búsquedas/mes", "Paginación completa", "CRM completo", "Soporte prioritario"],
     popular: true
+  },
+  {
+    id: "pro_max",
+    name: "Pro Max",
+    price: "$49",
+    period: "/mes",
+    icon: Star,
+    color: "text-orange-500",
+    features: ["800 búsquedas/mes", "Todo lo del Pro", "Exportar CSV"],
+    popular: false
   },
   {
     id: "enterprise",
     name: "Enterprise",
-    price: "$199",
+    price: "$99",
     period: "/mes",
     icon: Building2,
     color: "text-amber-500",
-    features: ["Búsquedas ilimitadas", "Usuarios ilimitados", "API access", "Integración CRM externo", "Soporte dedicado"],
+    features: ["1500+ búsquedas/mes", "Todo lo del Pro Max", "API access", "Soporte dedicado"],
     popular: false
   }
 ];
