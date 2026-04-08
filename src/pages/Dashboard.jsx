@@ -1,9 +1,10 @@
-import { useState } from "react";
-import { Search, MapPin, ChevronDown, Loader2, AlertCircle, Building2, Plus } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search, MapPin, ChevronDown, Loader2, AlertCircle, Building2, Plus, Lock } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { LOCATIONS } from "../data/locations";
 import LeadCard from "../components/LeadCard";
 import NichoSuggester from "../components/NichoSuggester";
+import UpgradeModal from "../components/UpgradeModal";
 import { useToast } from "@/components/ui/use-toast";
 
 export default function Dashboard() {
@@ -18,6 +19,11 @@ export default function Dashboard() {
   const [savedIds, setSavedIds] = useState(new Set());
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState("");
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState("");
+
+  // Plan state
+  const [userPlanInfo, setUserPlanInfo] = useState(null);
 
   // Pagination state
   const [nextPageToken, setNextPageToken] = useState(null);
@@ -31,13 +37,43 @@ export default function Dashboard() {
   const handlePaisChange = (v) => { setPais(v); setEstado(""); setCiudad(""); };
   const handleEstadoChange = (v) => { setEstado(v); setCiudad(""); };
 
+  // Load plan info on mount
+  useEffect(() => {
+    base44.functions.invoke("trackSearch", { action: "check" })
+      .then(res => setUserPlanInfo(res.data))
+      .catch(() => {});
+  }, []);
+
+  const isFree = userPlanInfo?.plan === "free" || !userPlanInfo;
+
   const handleSearch = async () => {
     if (!pais || !estado || !ciudad || !nicho.trim()) {
       toast({ title: "Campos incompletos", description: "Selecciona País, Estado, Ciudad e ingresa un nicho.", variant: "destructive" });
       return;
     }
+
+    // Check + increment usage
     setLoading(true);
     setError("");
+
+    let planCheck;
+    try {
+      const checkRes = await base44.functions.invoke("trackSearch", { action: "increment" });
+      planCheck = checkRes.data;
+      setUserPlanInfo(planCheck);
+    } catch (e) {
+      setLoading(false);
+      setError("Error al verificar tu plan. Intenta de nuevo.");
+      return;
+    }
+
+    if (!planCheck.allowed) {
+      setLoading(false);
+      setUpgradeReason(planCheck.reason);
+      setShowUpgrade(true);
+      return;
+    }
+
     setLeads([]);
     setSearched(true);
     setSavedIds(new Set());
@@ -51,10 +87,18 @@ export default function Dashboard() {
         variationIndex: 0
       });
       const d = res.data;
-      setLeads(d.leads || []);
-      setNextPageToken(d.nextPageToken || null);
-      setNextVariationIndex(d.nextVariationIndex ?? null);
-      setHasMore(d.hasMore || false);
+      const fetchedLeads = d.leads || [];
+
+      // Free plan: only show first 20
+      if (planCheck.plan === "free") {
+        setLeads(fetchedLeads.slice(0, 20));
+        setHasMore(false); // locked for free
+      } else {
+        setLeads(fetchedLeads);
+        setNextPageToken(d.nextPageToken || null);
+        setNextVariationIndex(d.nextVariationIndex ?? null);
+        setHasMore(d.hasMore || false);
+      }
     } catch (e) {
       setError(e.message || "Error al buscar leads.");
     } finally {
@@ -63,6 +107,11 @@ export default function Dashboard() {
   };
 
   const handleLoadMore = async () => {
+    if (isFree) {
+      setUpgradeReason("O botão 'Carregar Mais' está disponível apenas nos planos pagos.");
+      setShowUpgrade(true);
+      return;
+    }
     setLoadingMore(true);
     try {
       const res = await base44.functions.invoke("searchLeads", {
@@ -104,9 +153,37 @@ export default function Dashboard() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-foreground">Dashboard de Prospección</h1>
-        <p className="text-muted-foreground mt-1 text-sm">Encuentra clientes potenciales en tu ciudad objetivo</p>
+      {showUpgrade && (
+        <UpgradeModal reason={upgradeReason} onClose={() => setShowUpgrade(false)} />
+      )}
+
+      <div className="mb-8 flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Dashboard de Prospección</h1>
+          <p className="text-muted-foreground mt-1 text-sm">Encuentra clientes potenciales en tu ciudad objetivo</p>
+        </div>
+
+        {/* Plan badge */}
+        {userPlanInfo && (
+          <div className="flex items-center gap-2 bg-card border border-border rounded-xl px-4 py-2 text-xs">
+            <span className="font-semibold text-foreground capitalize">{userPlanInfo.plan === "free" ? "Plano Gratuito" : `Plano ${userPlanInfo.plan}`}</span>
+            {userPlanInfo.plan === "free" ? (
+              <span className="text-muted-foreground">
+                {3 - (userPlanInfo.searches_today || 0)} buscas restantes hoje
+              </span>
+            ) : (
+              <span className="text-muted-foreground">
+                {userPlanInfo.searches_this_month || 0}/{userPlanInfo.monthly_limit} buscas este mês
+              </span>
+            )}
+            <button
+              onClick={() => { setUpgradeReason(""); setShowUpgrade(true); }}
+              className="ml-1 text-primary font-semibold hover:underline"
+            >
+              Upgrade
+            </button>
+          </div>
+        )}
       </div>
 
       <NichoSuggester onSelectNicho={(s) => setNicho(s)} />
@@ -212,18 +289,27 @@ export default function Dashboard() {
             ))}
           </div>
 
-          {/* Load More Button */}
-          {hasMore && (
+          {/* Load More — locked for free, functional for paid */}
+          {(hasMore || isFree) && searched && (
             <div className="flex flex-col items-center mt-10 gap-2">
               <button
                 onClick={handleLoadMore}
                 disabled={loadingMore}
-                className="flex items-center gap-2 bg-primary text-primary-foreground px-10 py-3 rounded-xl text-sm font-semibold hover:bg-primary/90 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed shadow-md"
+                className={`flex items-center gap-2 px-10 py-3 rounded-xl text-sm font-semibold transition-all shadow-md ${
+                  isFree
+                    ? "bg-secondary text-muted-foreground border border-border cursor-pointer hover:bg-secondary/80"
+                    : "bg-primary text-primary-foreground hover:bg-primary/90 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+                }`}
               >
-                {loadingMore ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                {loadingMore ? "Cargando más leads..." : "Carregar Mais Leads"}
+                {isFree ? <Lock className="w-4 h-4" /> : loadingMore ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                {isFree ? "Carregar Mais — Faça Upgrade" : loadingMore ? "Cargando más leads..." : "Carregar Mais Leads"}
               </button>
-              <p className="text-xs text-muted-foreground">Buscando más establecimientos en {ciudad}</p>
+              {isFree && (
+                <p className="text-xs text-muted-foreground">Plano gratuito: apenas 20 resultados por busca</p>
+              )}
+              {!isFree && (
+                <p className="text-xs text-muted-foreground">Buscando mais establecimientos em {ciudad}</p>
+              )}
             </div>
           )}
         </>
