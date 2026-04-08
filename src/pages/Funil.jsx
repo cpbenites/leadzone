@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import { Phone, MapPin, Star, MessageCircle, Loader2 } from "lucide-react";
+import { Phone, MapPin, Star, MessageCircle, Loader2, Trash2, Copy, Check } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 const COLUMNS = [
@@ -11,10 +11,21 @@ const COLUMNS = [
   { id: "cliente_cerrado", label: "Cliente Cerrado", color: "bg-green-500", light: "bg-green-50 border-green-100" },
 ];
 
-function KanbanCard({ lead, index }) {
+function KanbanCard({ lead, index, onDelete }) {
+  const { toast } = useToast();
+  const [copied, setCopied] = useState(false);
+
   const whatsapp = lead.telefono
     ? `https://wa.me/${lead.telefono.replace(/\D/g, "")}`
     : null;
+
+  const handleCopy = (e) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(lead.nombre_empresa);
+    setCopied(true);
+    toast({ title: "Copiado", description: "Nombre de la empresa copiado al portapapeles." });
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <Draggable draggableId={lead.id} index={index}>
@@ -23,33 +34,55 @@ function KanbanCard({ lead, index }) {
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          className={`bg-white border border-border rounded-xl p-2.5 shadow-sm transition-shadow ${
+          className={`bg-white border border-border rounded-xl p-2.5 shadow-sm transition-shadow group ${
             snapshot.isDragging ? "shadow-xl ring-2 ring-primary/30" : "hover:shadow-md"
           }`}
         >
-          <h3 className="font-semibold text-xs text-foreground leading-tight mb-1.5">{lead.nombre_empresa}</h3>
+          <div className="flex items-start justify-between gap-2 mb-1.5">
+            <h3 className="font-semibold text-xs text-foreground leading-tight flex-1">{lead.nombre_empresa}</h3>
+            
+            {/* Ações de Hover (Copiar e Excluir) */}
+            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button 
+                onClick={handleCopy} 
+                className="p-1 hover:bg-slate-100 rounded text-muted-foreground hover:text-foreground transition-colors"
+                title="Copiar nombre"
+              >
+                {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+              </button>
+              <button 
+                onClick={(e) => { e.stopPropagation(); onDelete(lead.id); }} 
+                className="p-1 hover:bg-red-50 rounded text-muted-foreground hover:text-red-500 transition-colors"
+                title="Eliminar lead"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
 
           {lead.segmento && (
-            <span className="inline-block text-xs bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded-full mb-1.5">
+            <span className="inline-block text-[10px] uppercase font-bold tracking-wider bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded-full mb-2">
               {lead.segmento}
             </span>
           )}
 
-          <div className="space-y-1 mb-2">
-            <div className="flex items-center gap-1">
-                <MapPin className="w-3 h-3 text-muted-foreground shrink-0" />
-              <span className="text-xs text-muted-foreground">{lead.ciudad}, {lead.estado}</span>
+          <div className="space-y-1.5 mb-3">
+            <div className="flex items-start gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
+              <span className="text-xs text-muted-foreground leading-tight">
+                {lead.direccion || `${lead.ciudad}, ${lead.estado}`}
+              </span>
             </div>
             {lead.telefono && (
-              <div className="flex items-center gap-1">
-                <Phone className="w-3 h-3 text-muted-foreground shrink-0" />
+              <div className="flex items-center gap-1.5">
+                <Phone className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                 <span className="text-xs text-muted-foreground">{lead.telefono}</span>
               </div>
             )}
             {lead.rating && (
-              <div className="flex items-center gap-1">
-                <Star className="w-3 h-3 text-warning fill-warning" />
-                <span className="text-xs text-muted-foreground">{lead.rating.toFixed(1)}</span>
+              <div className="flex items-center gap-1.5">
+                <Star className="w-3.5 h-3.5 text-warning fill-warning shrink-0" />
+                <span className="text-xs font-medium text-muted-foreground">{lead.rating.toFixed(1)}</span>
               </div>
             )}
           </div>
@@ -59,7 +92,8 @@ function KanbanCard({ lead, index }) {
               href={whatsapp}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-1 w-full py-1 rounded-lg bg-green-500 text-white text-xs font-semibold hover:bg-green-600 transition-colors"
+              onClick={(e) => e.stopPropagation()} // Previne drag ao clicar no link
+              className="flex items-center justify-center gap-1.5 w-full py-1.5 rounded-lg bg-green-500/10 text-green-600 border border-green-500/20 text-xs font-bold hover:bg-green-500 hover:text-white transition-all"
             >
               <MessageCircle className="w-3.5 h-3.5" />
               Llamar por WhatsApp
@@ -77,11 +111,27 @@ export default function Funil() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    fetchLeads();
+  }, []);
+
+  const fetchLeads = () => {
     base44.entities.SavedLead.list("-created_date", 200).then(data => {
       setLeads(data);
       setLoading(false);
     });
-  }, []);
+  };
+
+  const handleDeleteLead = async (id) => {
+    if (!window.confirm("¿Estás seguro de que deseas eliminar este lead? Esta acción no se puede deshacer.")) return;
+    
+    try {
+      await base44.entities.SavedLead.delete(id);
+      setLeads(prev => prev.filter(l => l.id !== id));
+      toast({ title: "Lead eliminado correctamente." });
+    } catch (e) {
+      toast({ title: "Error al eliminar", description: e.message, variant: "destructive" });
+    }
+  };
 
   const getColumnLeads = (colId) => leads.filter(l => l.status_funil === colId);
 
@@ -96,7 +146,7 @@ export default function Funil() {
       await base44.entities.SavedLead.update(draggableId, { status_funil: newStatus });
     } catch (e) {
       toast({ title: "Error al mover lead", description: e.message, variant: "destructive" });
-      base44.entities.SavedLead.list("-created_date", 200).then(setLeads);
+      fetchLeads();
     }
   };
 
@@ -127,7 +177,7 @@ export default function Funil() {
                       <div className={`w-2.5 h-2.5 rounded-full ${col.color}`} />
                       <h2 className="text-sm font-semibold text-foreground">{col.label}</h2>
                     </div>
-                    <span className="text-xs bg-white border border-border text-muted-foreground px-2 py-0.5 rounded-full font-medium">
+                    <span className="text-xs bg-white border border-border text-muted-foreground px-2 py-0.5 rounded-full font-medium shadow-sm">
                       {colLeads.length}
                     </span>
                   </div>
@@ -142,11 +192,11 @@ export default function Funil() {
                         }`}
                       >
                         {colLeads.map((lead, i) => (
-                          <KanbanCard key={lead.id} lead={lead} index={i} />
+                          <KanbanCard key={lead.id} lead={lead} index={i} onDelete={handleDeleteLead} />
                         ))}
                         {provided.placeholder}
                         {colLeads.length === 0 && !snapshot.isDraggingOver && (
-                          <div className="flex items-center justify-center h-24 text-xs text-muted-foreground/60 border-2 border-dashed border-border/40 rounded-lg">
+                          <div className="flex items-center justify-center h-24 text-xs font-medium text-muted-foreground/50 border-2 border-dashed border-border/50 rounded-xl bg-white/30">
                             Arrastra leads aquí
                           </div>
                         )}
