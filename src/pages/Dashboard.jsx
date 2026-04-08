@@ -18,7 +18,11 @@ export default function Dashboard() {
   const [savedIds, setSavedIds] = useState(new Set());
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState("");
-  const [Token_Proxima_Pagina, setToken_Proxima_Pagina] = useState(null);
+
+  // Pagination state
+  const [nextPageToken, setNextPageToken] = useState(null);
+  const [nextVariationIndex, setNextVariationIndex] = useState(null);
+  const [hasMore, setHasMore] = useState(false);
 
   const paises = Object.keys(LOCATIONS);
   const estados = pais ? Object.keys(LOCATIONS[pais] || {}) : [];
@@ -37,28 +41,40 @@ export default function Dashboard() {
     setLeads([]);
     setSearched(true);
     setSavedIds(new Set());
-    setToken_Proxima_Pagina(null);
+    setNextPageToken(null);
+    setNextVariationIndex(null);
+    setHasMore(false);
+
     try {
-      const res = await base44.functions.invoke("searchLeads", { nicho: nicho.trim(), ciudad, estado, pais });
-      setLeads(res.data.leads || []);
-      setToken_Proxima_Pagina(res.data.nextPageToken || null);
+      const res = await base44.functions.invoke("searchLeads", {
+        nicho: nicho.trim(), ciudad, estado, pais,
+        variationIndex: 0
+      });
+      const d = res.data;
+      setLeads(d.leads || []);
+      setNextPageToken(d.nextPageToken || null);
+      setNextVariationIndex(d.nextVariationIndex ?? null);
+      setHasMore(d.hasMore || false);
     } catch (e) {
-      setError(e.message || "Error al buscar leads. Verifica tu API Key.");
+      setError(e.message || "Error al buscar leads.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleLoadMore = async () => {
-    if (!Token_Proxima_Pagina) return;
     setLoadingMore(true);
     try {
       const res = await base44.functions.invoke("searchLeads", {
         nicho: nicho.trim(), ciudad, estado, pais,
-        pageToken: Token_Proxima_Pagina
+        pageToken: nextPageToken || undefined,
+        variationIndex: nextVariationIndex ?? 0
       });
-      setLeads(prev => [...prev, ...(res.data.leads || [])]);
-      setToken_Proxima_Pagina(res.data.nextPageToken || null);
+      const d = res.data;
+      setLeads(prev => [...prev, ...(d.leads || [])]);
+      setNextPageToken(d.nextPageToken || null);
+      setNextVariationIndex(d.nextVariationIndex ?? null);
+      setHasMore(d.hasMore || false);
     } catch (e) {
       toast({ title: "Error al cargar más leads", description: e.message, variant: "destructive" });
     } finally {
@@ -184,10 +200,11 @@ export default function Dashboard() {
             <h2 className="text-sm font-semibold text-foreground">{leads.length} establecimientos encontrados</h2>
             <span className="text-xs text-muted-foreground">{ciudad}, {estado}</span>
           </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {leads.map((lead, i) => (
               <LeadCard
-                key={lead.place_id || i}
+                key={`${lead.place_id || lead.nombre_empresa}-${i}`}
                 lead={lead}
                 onSave={handleSave}
                 saved={savedIds.has(lead.place_id || lead.nombre_empresa)}
@@ -196,16 +213,17 @@ export default function Dashboard() {
           </div>
 
           {/* Load More Button */}
-          {Token_Proxima_Pagina && (
-            <div className="flex justify-center mt-8">
+          {hasMore && (
+            <div className="flex flex-col items-center mt-10 gap-2">
               <button
                 onClick={handleLoadMore}
                 disabled={loadingMore}
-                className="flex items-center gap-2 bg-secondary text-secondary-foreground border border-border px-8 py-3 rounded-xl text-sm font-semibold hover:bg-secondary/80 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed shadow-sm"
+                className="flex items-center gap-2 bg-primary text-primary-foreground px-10 py-3 rounded-xl text-sm font-semibold hover:bg-primary/90 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed shadow-md"
               >
                 {loadingMore ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                 {loadingMore ? "Cargando más leads..." : "Carregar Mais Leads"}
               </button>
+              <p className="text-xs text-muted-foreground">Buscando más establecimientos en {ciudad}</p>
             </div>
           )}
         </>
