@@ -1,4 +1,5 @@
 import { MapPin, Phone, Star, Bookmark, CheckCircle } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 
 export default function LeadCard({ lead, onSave, saved }) {
   return (
@@ -23,7 +24,17 @@ export default function LeadCard({ lead, onSave, saved }) {
       {lead.telefono && (
         <div className="flex items-center gap-1.5 text-muted-foreground">
           <Phone className="w-3.5 h-3.5 shrink-0" />
-          <span className="text-xs">{lead.telefono}</span>
+          <span className="text-xs flex-1">{lead.telefono}</span>
+          <a
+            href={`https://wa.me/${lead.telefono.replace(/\D/g, "")}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={e => e.stopPropagation()}
+            className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 hover:bg-green-500/20 transition-colors text-xs font-semibold"
+          >
+            <MessageCircle className="w-3 h-3" />
+            WhatsApp
+          </a>
         </div>
       )}
 

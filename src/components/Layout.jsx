@@ -23,7 +23,7 @@ export default function Layout({ children }) {
               <Zap className="w-4 h-4 text-white" />
             </div>
             <div>
-              <h1 className="text-sm font-bold text-white leading-tight">ProspectaLocal</h1>
+              <h1 className="text-sm font-bold text-white leading-tight">LeadZone</h1>
               <p className="text-xs text-sidebar-foreground">B2B Inteligente</p>
             </div>
           </div>
@@ -66,7 +66,7 @@ export default function Layout({ children }) {
           <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
             <Zap className="w-3.5 h-3.5 text-white" />
           </div>
-          <span className="text-sm font-bold text-white">ProspectaLocal</span>
+          <span className="text-sm font-bold text-white">LeadZone</span>
         </div>
         <button onClick={() => setMobileOpen(!mobileOpen)} className="text-sidebar-foreground p-1">
           <div className="w-5 h-0.5 bg-current mb-1" />
@@ -84,7 +84,7 @@ export default function Layout({ children }) {
                 <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
                   <Zap className="w-3.5 h-3.5 text-white" />
                 </div>
-                <span className="text-sm font-bold text-white">ProspectaLocal</span>
+                <span className="text-sm font-bold text-white">LeadZone</span>
               </div>
             </div>
             {navItems.map(({ to, icon: Icon, label }) => {
@@ -109,9 +109,28 @@ export default function Layout({ children }) {
       )}
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto md:pt-0 pt-14">
+      <main className="flex-1 overflow-y-auto md:pt-0 pt-14 md:pb-0 pb-16">
         {children}
       </main>
+
+      {/* Bottom Nav Mobile */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t border-sidebar-border flex">
+        {navItems.map(({ to, icon: Icon, label }) => {
+          const active = location.pathname === to;
+          return (
+            <Link
+              key={to}
+              to={to}
+              className={`flex-1 flex flex-col items-center justify-center py-2 gap-0.5 text-xs font-medium transition-all ${
+                active ? "text-white" : "text-sidebar-foreground"
+              }`}
+            >
+              <Icon className={`w-5 h-5 ${active ? "text-sidebar-primary" : ""}`} />
+              <span className="text-[10px]">{label}</span>
+            </Link>
+          );
+        })}
+      </nav>
     </div>
   );
 }
