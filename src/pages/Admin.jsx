@@ -66,9 +66,9 @@ export default function Admin() {
           u.email === user.email ? { ...u, plan: res.data.plan } : u
         )
       );
-      toast({ title: "Plan actualizado", description: `${user.email} → ${PLAN_LABELS[newPlan]}` });
+      toast({ title: "Plan actualizado", description: `${user.email} → ${PLAN_LABELS[newPlan]}`, duration: 3000 });
     } catch (e) {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
+      toast({ title: "Error", description: e.message, variant: "destructive", duration: 3000 });
     } finally {
       setSaving(prev => ({ ...prev, [user.email]: false }));
     }
