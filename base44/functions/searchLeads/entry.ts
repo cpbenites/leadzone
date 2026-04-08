@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { nicho, ciudad, estado, pais } = body;
+    const { nicho, ciudad, estado, pais, pageToken } = body;
 
     if (!nicho || !ciudad || !estado || !pais) {
       return Response.json({ error: 'Faltan parámetros: nicho, ciudad, estado, pais' }, { status: 400 });
@@ -21,16 +21,21 @@ Deno.serve(async (req) => {
     }
 
     const textQuery = `${nicho} en ${ciudad}, ${estado}, ${pais}`;
+
+    // Fetch up to 3 pages starting from the given pageToken (or from the beginning)
     let allPlaces = [];
-    let pageToken = null;
+    let currentToken = pageToken || null;
+    let nextPageToken = null;
+    let isFirst = !pageToken;
+    let pagesLeft = 3;
 
     do {
-      if (pageToken) {
+      if (currentToken) {
         await new Promise(r => setTimeout(r, 2000));
       }
 
       const requestBody = { textQuery, maxResultCount: 20, languageCode: 'es' };
-      if (pageToken) requestBody.pageToken = pageToken;
+      if (currentToken) requestBody.pageToken = currentToken;
 
       const response = await fetch('https://places.googleapis.com/v1/places:searchText', {
         method: 'POST',
@@ -51,12 +56,13 @@ Deno.serve(async (req) => {
 
       const newPlaces = data.places || [];
       allPlaces = [...allPlaces, ...newPlaces];
-      pageToken = data.nextPageToken || null;
+      nextPageToken = data.nextPageToken || null;
+      currentToken = nextPageToken;
+      pagesLeft--;
 
-      // Stop if no new results to avoid infinite loop
       if (newPlaces.length === 0) break;
 
-    } while (pageToken);
+    } while (currentToken && pagesLeft > 0);
 
     const leads = allPlaces.map(place => ({
       nombre_empresa: place.displayName?.text || 'Sin nombre',
@@ -70,7 +76,7 @@ Deno.serve(async (req) => {
       segmento: nicho
     }));
 
-    return Response.json({ leads, total: leads.length });
+    return Response.json({ leads, total: leads.length, nextPageToken: nextPageToken || null });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

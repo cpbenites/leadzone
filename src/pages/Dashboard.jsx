@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, MapPin, ChevronDown, Loader2, AlertCircle, Building2 } from "lucide-react";
+import { Search, MapPin, ChevronDown, Loader2, AlertCircle, Building2, Plus } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { LOCATIONS } from "../data/locations";
 import LeadCard from "../components/LeadCard";
@@ -13,10 +13,12 @@ export default function Dashboard() {
   const [ciudad, setCiudad] = useState("");
   const [nicho, setNicho] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [leads, setLeads] = useState([]);
   const [savedIds, setSavedIds] = useState(new Set());
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState("");
+  const [Token_Proxima_Pagina, setToken_Proxima_Pagina] = useState(null);
 
   const paises = Object.keys(LOCATIONS);
   const estados = pais ? Object.keys(LOCATIONS[pais] || {}) : [];
@@ -35,13 +37,32 @@ export default function Dashboard() {
     setLeads([]);
     setSearched(true);
     setSavedIds(new Set());
+    setToken_Proxima_Pagina(null);
     try {
       const res = await base44.functions.invoke("searchLeads", { nicho: nicho.trim(), ciudad, estado, pais });
       setLeads(res.data.leads || []);
+      setToken_Proxima_Pagina(res.data.nextPageToken || null);
     } catch (e) {
       setError(e.message || "Error al buscar leads. Verifica tu API Key.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleLoadMore = async () => {
+    if (!Token_Proxima_Pagina) return;
+    setLoadingMore(true);
+    try {
+      const res = await base44.functions.invoke("searchLeads", {
+        nicho: nicho.trim(), ciudad, estado, pais,
+        pageToken: Token_Proxima_Pagina
+      });
+      setLeads(prev => [...prev, ...(res.data.leads || [])]);
+      setToken_Proxima_Pagina(res.data.nextPageToken || null);
+    } catch (e) {
+      toast({ title: "Error al cargar más leads", description: e.message, variant: "destructive" });
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -135,7 +156,7 @@ export default function Dashboard() {
         <button onClick={handleSearch} disabled={loading}
           className="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-primary/90 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed shadow-sm">
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-          {loading ? "Buscando todos los establecimientos..." : "Buscar Leads en la Ciudad"}
+          {loading ? "Buscando leads..." : "Buscar Leads en la Ciudad"}
         </button>
       </div>
 
@@ -173,6 +194,20 @@ export default function Dashboard() {
               />
             ))}
           </div>
+
+          {/* Load More Button */}
+          {Token_Proxima_Pagina && (
+            <div className="flex justify-center mt-8">
+              <button
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                className="flex items-center gap-2 bg-secondary text-secondary-foreground border border-border px-8 py-3 rounded-xl text-sm font-semibold hover:bg-secondary/80 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed shadow-sm"
+              >
+                {loadingMore ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                {loadingMore ? "Cargando más leads..." : "Carregar Mais Leads"}
+              </button>
+            </div>
+          )}
         </>
       )}
     </div>
