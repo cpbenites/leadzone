@@ -9,7 +9,7 @@ const PLANS = [
     period: "/mes",
     tag: null,
     description: "Para probar el motor de búsqueda.",
-    features: ["3 búsquedas/día", "20 resultados por búsqueda", "Embudo CRM básico", "Sin tarjeta de crédito"],
+    features: ["3 búsquedas/día", "5 resultados por búsqueda", "Embudo CRM básico", "Sin tarjeta de crédito"],
     cta: "Empezar Gratis",
     highlight: false,
   },
