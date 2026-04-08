@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
       headers: {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': apiKey,
-        'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.rating,places.id,nextPageToken'
+        'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.internationalPhoneNumber,places.nationalPhoneNumber,places.rating,places.id,nextPageToken'
       },
       body: JSON.stringify(requestBody)
     });
@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
     const leads = places.map(place => ({
       nombre_empresa: place.displayName?.text || 'Sin nombre',
       direccion: place.formattedAddress || 'Sin dirección',
-      telefono: place.nationalPhoneNumber || '',
+      telefono: place.internationalPhoneNumber || place.nationalPhoneNumber || '',
       rating: place.rating || null,
       place_id: place.id || '',
       ciudad,
