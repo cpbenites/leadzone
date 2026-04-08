@@ -91,7 +91,7 @@ export default function Dashboard() {
 
       // Free plan: only show first 20
       if (planCheck.plan === "free") {
-        setLeads(fetchedLeads.slice(0, 20));
+        setLeads(fetchedLeads.slice(0, 5));
         setHasMore(false); // locked for free
       } else {
         setLeads(fetchedLeads);
@@ -305,7 +305,7 @@ export default function Dashboard() {
                 {isFree ? "Cargar Más — Mejora tu Plan" : loadingMore ? "Cargando más leads..." : "Cargar Más Leads"}
               </button>
               {isFree && (
-                <p className="text-xs text-muted-foreground">Plan gratuito: solo 20 resultados por búsqueda</p>
+                <p className="text-xs text-muted-foreground">Plan gratuito: solo 5 resultados por búsqueda</p>
               )}
               {!isFree && (
                 <p className="text-xs text-muted-foreground">Buscando más establecimientos en {ciudad}</p>
