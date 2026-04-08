@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useToast } from "@/components/ui/use-toast";
+
 import { Shield, Loader2, ChevronDown, X } from "lucide-react";
 
 const PLANS = ["free", "starter", "pro", "pro_max", "enterprise"];
@@ -22,7 +22,6 @@ const PLAN_COLORS = {
 };
 
 export default function Admin() {
-  const { toast } = useToast();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(null);
@@ -66,9 +65,9 @@ export default function Admin() {
           u.email === user.email ? { ...u, plan: res.data.plan } : u
         )
       );
-      toast({ title: "Plan actualizado", description: `${user.email} → ${PLAN_LABELS[newPlan]}`, duration: 3000 });
+
     } catch (e) {
-      toast({ title: "Error", description: e.message, variant: "destructive", duration: 3000 });
+      console.error(e.message);
     } finally {
       setSaving(prev => ({ ...prev, [user.email]: false }));
     }
