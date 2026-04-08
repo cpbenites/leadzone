@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { Search, MapPin, ChevronDown, Loader2, AlertCircle, Building2 } from "lucide-react";
+import { Search, MapPin, ChevronDown, Loader2, AlertCircle, Building2, ChevronLeft, ChevronRight } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { LOCATIONS } from "../data/locations";
 import LeadCard from "../components/LeadCard";
 import NichoSuggester from "../components/NichoSuggester";
 import { useToast } from "@/components/ui/use-toast";
+
+const PAGE_SIZE = 20;
 
 export default function Dashboard() {
   const { toast } = useToast();
@@ -13,12 +15,12 @@ export default function Dashboard() {
   const [ciudad, setCiudad] = useState("");
   const [nicho, setNicho] = useState("");
   const [loading, setLoading] = useState(false);
-  const [leads, setLeads] = useState([]);
+  const [allLeads, setAllLeads] = useState([]);
   const [savedIds, setSavedIds] = useState(new Set());
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState("");
-  const [nextPageToken, setNextPageToken] = useState(null);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const paises = Object.keys(LOCATIONS);
   const estados = pais ? Object.keys(LOCATIONS[pais] || {}) : [];
@@ -27,6 +29,27 @@ export default function Dashboard() {
   const handlePaisChange = (v) => { setPais(v); setEstado(""); setCiudad(""); };
   const handleEstadoChange = (v) => { setEstado(v); setCiudad(""); };
 
+  // Fetch all pages from the API
+  const fetchAllLeads = async (nicho, ciudad, estado, pais) => {
+    let allResults = [];
+    let pageToken = null;
+
+    do {
+      const payload = { nicho, ciudad, estado, pais };
+      if (pageToken) payload.pageToken = pageToken;
+
+      const res = await base44.functions.invoke("searchLeads", payload);
+      const data = res.data;
+      allResults = [...allResults, ...(data.leads || [])];
+      pageToken = data.nextPageToken || null;
+
+      // Google Places API requires a short delay between page token calls
+      if (pageToken) await new Promise(r => setTimeout(r, 1500));
+    } while (pageToken);
+
+    return allResults;
+  };
+
   const handleSearch = async () => {
     if (!pais || !estado || !ciudad || !nicho.trim()) {
       toast({ title: "Campos incompletos", description: "Selecciona País, Estado, Ciudad e ingresa un nicho.", variant: "destructive" });
@@ -34,32 +57,18 @@ export default function Dashboard() {
     }
     setLoading(true);
     setError("");
-    setLeads([]);
+    setAllLeads([]);
     setSearched(true);
     setSavedIds(new Set());
-    setNextPageToken(null);
+    setCurrentPage(1);
     try {
-      const res = await base44.functions.invoke("searchLeads", { nicho: nicho.trim(), ciudad, estado, pais });
-      setLeads(res.data.leads || []);
-      setNextPageToken(res.data.nextPageToken || null);
+      const leads = await fetchAllLeads(nicho.trim(), ciudad, estado, pais);
+      setAllLeads(leads);
+      setTotalPages(Math.max(1, Math.ceil(leads.length / PAGE_SIZE)));
     } catch (e) {
       setError(e.message || "Error al buscar leads. Verifica tu API Key.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleLoadMore = async () => {
-    if (!nextPageToken) return;
-    setLoadingMore(true);
-    try {
-      const res = await base44.functions.invoke("searchLeads", { nicho: nicho.trim(), ciudad, estado, pais, pageToken: nextPageToken });
-      setLeads(prev => [...prev, ...(res.data.leads || [])]);
-      setNextPageToken(res.data.nextPageToken || null);
-    } catch (e) {
-      setError(e.message || "Error al cargar más leads.");
-    } finally {
-      setLoadingMore(false);
     }
   };
 
@@ -84,6 +93,13 @@ export default function Dashboard() {
     }
   };
 
+  const pageLeads = allLeads.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  const goToPage = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-8">
@@ -96,15 +112,11 @@ export default function Dashboard() {
       {/* Filters Card */}
       <div className="bg-card border border-border rounded-2xl p-6 mb-8 shadow-sm">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-          {/* País */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">País</label>
             <div className="relative">
-              <select
-                value={pais}
-                onChange={e => handlePaisChange(e.target.value)}
-                className="w-full appearance-none bg-background border border-input rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring pr-8"
-              >
+              <select value={pais} onChange={e => handlePaisChange(e.target.value)}
+                className="w-full appearance-none bg-background border border-input rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring pr-8">
                 <option value="">Seleccionar país...</option>
                 {paises.map(p => <option key={p} value={p}>{p}</option>)}
               </select>
@@ -112,16 +124,11 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Estado */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Estado / Provincia</label>
             <div className="relative">
-              <select
-                value={estado}
-                onChange={e => handleEstadoChange(e.target.value)}
-                disabled={!pais}
-                className="w-full appearance-none bg-background border border-input rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring pr-8 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
+              <select value={estado} onChange={e => handleEstadoChange(e.target.value)} disabled={!pais}
+                className="w-full appearance-none bg-background border border-input rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring pr-8 disabled:opacity-40 disabled:cursor-not-allowed">
                 <option value="">Seleccionar estado...</option>
                 {estados.map(e => <option key={e} value={e}>{e}</option>)}
               </select>
@@ -129,16 +136,11 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Ciudad */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Ciudad</label>
             <div className="relative">
-              <select
-                value={ciudad}
-                onChange={e => setCiudad(e.target.value)}
-                disabled={!estado}
-                className="w-full appearance-none bg-background border border-input rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring pr-8 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
+              <select value={ciudad} onChange={e => setCiudad(e.target.value)} disabled={!estado}
+                className="w-full appearance-none bg-background border border-input rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring pr-8 disabled:opacity-40 disabled:cursor-not-allowed">
                 <option value="">Seleccionar ciudad...</option>
                 {ciudades.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
@@ -146,19 +148,14 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Nicho */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Nicho / Segmento</label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                type="text"
-                value={nicho}
-                onChange={e => setNicho(e.target.value)}
+              <input type="text" value={nicho} onChange={e => setNicho(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && handleSearch()}
                 placeholder="Ej: restaurantes, clínicas..."
-                className="w-full bg-background border border-input rounded-lg pl-9 pr-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground"
-              />
+                className="w-full bg-background border border-input rounded-lg pl-9 pr-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground" />
             </div>
           </div>
         </div>
@@ -170,13 +167,10 @@ export default function Dashboard() {
           </div>
         )}
 
-        <button
-          onClick={handleSearch}
-          disabled={loading}
-          className="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-primary/90 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed shadow-sm"
-        >
+        <button onClick={handleSearch} disabled={loading}
+          className="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-primary/90 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed shadow-sm">
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-          {loading ? "Buscando leads..." : "Buscar Leads en la Ciudad"}
+          {loading ? "Buscando todos los establecimientos..." : "Buscar Leads en la Ciudad"}
         </button>
       </div>
 
@@ -189,7 +183,7 @@ export default function Dashboard() {
       )}
 
       {/* Empty state */}
-      {!loading && searched && leads.length === 0 && !error && (
+      {!loading && searched && allLeads.length === 0 && !error && (
         <div className="text-center py-16 text-muted-foreground">
           <Building2 className="w-12 h-12 mx-auto mb-3 opacity-30" />
           <p className="font-medium">No se encontraron resultados</p>
@@ -198,17 +192,17 @@ export default function Dashboard() {
       )}
 
       {/* Results */}
-      {leads.length > 0 && (
+      {allLeads.length > 0 && (
         <>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-foreground">
-              {nextPageToken ? "Más de 20 establecimientos encontrados" : `${leads.length} establecimientos encontrados`}
+              {allLeads.length} establecimientos encontrados
             </h2>
-            <span className="text-xs text-muted-foreground">{ciudad}, {estado}</span>
+            <span className="text-xs text-muted-foreground">Página {currentPage} de {totalPages} · {ciudad}, {estado}</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {leads.map((lead, i) => (
+            {pageLeads.map((lead, i) => (
               <LeadCard
                 key={lead.place_id || i}
                 lead={lead}
@@ -218,17 +212,39 @@ export default function Dashboard() {
             ))}
           </div>
 
-          {nextPageToken && (
-            <div className="flex justify-center mt-8">
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-8">
               <button
-                onClick={handleLoadMore}
-                disabled={loadingMore}
-                className="flex items-center gap-2 bg-secondary text-secondary-foreground hover:bg-secondary/80 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-60"
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               >
-                {loadingMore
-                  ? <><span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" /> Cargando...</>
-                  : "Buscar más establecimientos"
-                }
+                <ChevronLeft className="w-4 h-4" /> Anterior
+              </button>
+
+              <div className="flex gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                  <button
+                    key={page}
+                    onClick={() => goToPage(page)}
+                    className={`w-9 h-9 rounded-lg text-sm font-semibold transition-all ${
+                      page === currentPage
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              >
+                Siguiente <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           )}
