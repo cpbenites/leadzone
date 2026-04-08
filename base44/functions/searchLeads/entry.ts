@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
 
     const textQuery = `${nicho} en ${ciudad}, ${estado}, ${pais}`;
     const requestBody = pageToken
-      ? { pageToken, maxResultCount: 20, languageCode: 'es' }
+      ? { pageToken }
       : { textQuery, maxResultCount: 20, languageCode: 'es' };
 
     const response = await fetch('https://places.googleapis.com/v1/places:searchText', {

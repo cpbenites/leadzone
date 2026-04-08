@@ -15,12 +15,14 @@ export default function Dashboard() {
   const [ciudad, setCiudad] = useState("");
   const [nicho, setNicho] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [allLeads, setAllLeads] = useState([]);
   const [savedIds, setSavedIds] = useState(new Set());
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [nextPageToken, setNextPageToken] = useState(null);
+  const [hasMore, setHasMore] = useState(false);
 
   const paises = Object.keys(LOCATIONS);
   const estados = pais ? Object.keys(LOCATIONS[pais] || {}) : [];
@@ -28,27 +30,6 @@ export default function Dashboard() {
 
   const handlePaisChange = (v) => { setPais(v); setEstado(""); setCiudad(""); };
   const handleEstadoChange = (v) => { setEstado(v); setCiudad(""); };
-
-  // Fetch all pages from the API
-  const fetchAllLeads = async (nicho, ciudad, estado, pais) => {
-    let allResults = [];
-    let pageToken = null;
-
-    do {
-      const payload = { nicho, ciudad, estado, pais };
-      if (pageToken) payload.pageToken = pageToken;
-
-      const res = await base44.functions.invoke("searchLeads", payload);
-      const data = res.data;
-      allResults = [...allResults, ...(data.leads || [])];
-      pageToken = data.nextPageToken || null;
-
-      // Google Places API requires a short delay between page token calls
-      if (pageToken) await new Promise(r => setTimeout(r, 1500));
-    } while (pageToken);
-
-    return allResults;
-  };
 
   const handleSearch = async () => {
     if (!pais || !estado || !ciudad || !nicho.trim()) {
@@ -61,14 +42,35 @@ export default function Dashboard() {
     setSearched(true);
     setSavedIds(new Set());
     setCurrentPage(1);
+    setNextPageToken(null);
+    setHasMore(false);
     try {
-      const leads = await fetchAllLeads(nicho.trim(), ciudad, estado, pais);
-      setAllLeads(leads);
-      setTotalPages(Math.max(1, Math.ceil(leads.length / PAGE_SIZE)));
+      const res = await base44.functions.invoke("searchLeads", { nicho: nicho.trim(), ciudad, estado, pais });
+      const data = res.data;
+      setAllLeads(data.leads || []);
+      setNextPageToken(data.nextPageToken || null);
+      setHasMore(!!data.nextPageToken);
     } catch (e) {
       setError(e.message || "Error al buscar leads. Verifica tu API Key.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Fetch next page from API and append to allLeads
+  const fetchNextApiPage = async () => {
+    if (!nextPageToken) return;
+    setLoadingMore(true);
+    try {
+      const res = await base44.functions.invoke("searchLeads", { nicho: nicho.trim(), ciudad, estado, pais, pageToken: nextPageToken });
+      const data = res.data;
+      setAllLeads(prev => [...prev, ...(data.leads || [])]);
+      setNextPageToken(data.nextPageToken || null);
+      setHasMore(!!data.nextPageToken);
+    } catch (e) {
+      setError(e.message || "Error al cargar más leads.");
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -93,12 +95,20 @@ export default function Dashboard() {
     }
   };
 
+  const totalPages = Math.max(1, Math.ceil(allLeads.length / PAGE_SIZE));
   const pageLeads = allLeads.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-  const goToPage = (page) => {
+  const goToPage = async (page) => {
+    // If navigating to a page we don't have data for yet, fetch more first
+    const neededLeads = page * PAGE_SIZE;
+    if (neededLeads > allLeads.length && hasMore && !loadingMore) {
+      await fetchNextApiPage();
+    }
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  const pagesAvailable = Math.ceil(allLeads.length / PAGE_SIZE);
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -170,7 +180,7 @@ export default function Dashboard() {
         <button onClick={handleSearch} disabled={loading}
           className="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-primary/90 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed shadow-sm">
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-          {loading ? "Buscando todos los establecimientos..." : "Buscar Leads en la Ciudad"}
+          {loading ? "Buscando leads..." : "Buscar Leads en la Ciudad"}
         </button>
       </div>
 
@@ -196,9 +206,9 @@ export default function Dashboard() {
         <>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-foreground">
-              {allLeads.length} establecimientos encontrados
+              {allLeads.length}{hasMore ? "+" : ""} establecimientos encontrados
             </h2>
-            <span className="text-xs text-muted-foreground">Página {currentPage} de {totalPages} · {ciudad}, {estado}</span>
+            <span className="text-xs text-muted-foreground">Página {currentPage} de {pagesAvailable}{hasMore ? "+" : ""} · {ciudad}, {estado}</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -213,41 +223,49 @@ export default function Dashboard() {
           </div>
 
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-8">
-              <button
-                onClick={() => goToPage(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-              >
-                <ChevronLeft className="w-4 h-4" /> Anterior
-              </button>
+          <div className="flex items-center justify-center gap-2 mt-8">
+            <button
+              onClick={() => goToPage(currentPage - 1)}
+              disabled={currentPage === 1 || loadingMore}
+              className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            >
+              <ChevronLeft className="w-4 h-4" /> Anterior
+            </button>
 
-              <div className="flex gap-1">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                  <button
-                    key={page}
-                    onClick={() => goToPage(page)}
-                    className={`w-9 h-9 rounded-lg text-sm font-semibold transition-all ${
-                      page === currentPage
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
-              </div>
-
-              <button
-                onClick={() => goToPage(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-              >
-                Siguiente <ChevronRight className="w-4 h-4" />
-              </button>
+            <div className="flex gap-1">
+              {Array.from({ length: pagesAvailable }, (_, i) => i + 1).map(page => (
+                <button
+                  key={page}
+                  onClick={() => goToPage(page)}
+                  disabled={loadingMore}
+                  className={`w-9 h-9 rounded-lg text-sm font-semibold transition-all ${
+                    page === currentPage
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+              {hasMore && (
+                <button
+                  onClick={fetchNextApiPage}
+                  disabled={loadingMore}
+                  className="w-9 h-9 rounded-lg text-sm font-semibold bg-secondary text-secondary-foreground hover:bg-secondary/80 disabled:opacity-40 transition-all flex items-center justify-center"
+                >
+                  {loadingMore ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "…"}
+                </button>
+              )}
             </div>
-          )}
+
+            <button
+              onClick={() => goToPage(currentPage + 1)}
+              disabled={(currentPage >= pagesAvailable && !hasMore) || loadingMore}
+              className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            >
+              {loadingMore ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <>Siguiente <ChevronRight className="w-4 h-4" /></>}
+            </button>
+          </div>
         </>
       )}
     </div>
