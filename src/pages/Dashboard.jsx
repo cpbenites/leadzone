@@ -1,12 +1,10 @@
 import { useState } from "react";
-import { Search, MapPin, ChevronDown, Loader2, AlertCircle, Building2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, MapPin, ChevronDown, Loader2, AlertCircle, Building2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { LOCATIONS } from "../data/locations";
 import LeadCard from "../components/LeadCard";
 import NichoSuggester from "../components/NichoSuggester";
 import { useToast } from "@/components/ui/use-toast";
-
-const PAGE_SIZE = 20;
 
 export default function Dashboard() {
   const { toast } = useToast();
@@ -15,14 +13,10 @@ export default function Dashboard() {
   const [ciudad, setCiudad] = useState("");
   const [nicho, setNicho] = useState("");
   const [loading, setLoading] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [allLeads, setAllLeads] = useState([]);
+  const [leads, setLeads] = useState([]);
   const [savedIds, setSavedIds] = useState(new Set());
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [nextPageToken, setNextPageToken] = useState(null);
-  const [hasMore, setHasMore] = useState(false);
 
   const paises = Object.keys(LOCATIONS);
   const estados = pais ? Object.keys(LOCATIONS[pais] || {}) : [];
@@ -38,39 +32,16 @@ export default function Dashboard() {
     }
     setLoading(true);
     setError("");
-    setAllLeads([]);
+    setLeads([]);
     setSearched(true);
     setSavedIds(new Set());
-    setCurrentPage(1);
-    setNextPageToken(null);
-    setHasMore(false);
     try {
       const res = await base44.functions.invoke("searchLeads", { nicho: nicho.trim(), ciudad, estado, pais });
-      const data = res.data;
-      setAllLeads(data.leads || []);
-      setNextPageToken(data.nextPageToken || null);
-      setHasMore(!!data.nextPageToken);
+      setLeads(res.data.leads || []);
     } catch (e) {
       setError(e.message || "Error al buscar leads. Verifica tu API Key.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Fetch next page from API and append to allLeads
-  const fetchNextApiPage = async () => {
-    if (!nextPageToken) return;
-    setLoadingMore(true);
-    try {
-      const res = await base44.functions.invoke("searchLeads", { nicho: nicho.trim(), ciudad, estado, pais, pageToken: nextPageToken });
-      const data = res.data;
-      setAllLeads(prev => [...prev, ...(data.leads || [])]);
-      setNextPageToken(data.nextPageToken || null);
-      setHasMore(!!data.nextPageToken);
-    } catch (e) {
-      setError(e.message || "Error al cargar más leads.");
-    } finally {
-      setLoadingMore(false);
     }
   };
 
@@ -94,21 +65,6 @@ export default function Dashboard() {
       toast({ title: "Error al guardar", description: e.message, variant: "destructive" });
     }
   };
-
-  const totalPages = Math.max(1, Math.ceil(allLeads.length / PAGE_SIZE));
-  const pageLeads = allLeads.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-
-  const goToPage = async (page) => {
-    // If navigating to a page we don't have data for yet, fetch more first
-    const neededLeads = page * PAGE_SIZE;
-    if (neededLeads > allLeads.length && hasMore && !loadingMore) {
-      await fetchNextApiPage();
-    }
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const pagesAvailable = Math.ceil(allLeads.length / PAGE_SIZE);
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -193,7 +149,7 @@ export default function Dashboard() {
       )}
 
       {/* Empty state */}
-      {!loading && searched && allLeads.length === 0 && !error && (
+      {!loading && searched && leads.length === 0 && !error && (
         <div className="text-center py-16 text-muted-foreground">
           <Building2 className="w-12 h-12 mx-auto mb-3 opacity-30" />
           <p className="font-medium">No se encontraron resultados</p>
@@ -202,17 +158,14 @@ export default function Dashboard() {
       )}
 
       {/* Results */}
-      {allLeads.length > 0 && (
+      {leads.length > 0 && (
         <>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-foreground">
-              {allLeads.length}{hasMore ? "+" : ""} establecimientos encontrados
-            </h2>
-            <span className="text-xs text-muted-foreground">Página {currentPage} de {pagesAvailable}{hasMore ? "+" : ""} · {ciudad}, {estado}</span>
+            <h2 className="text-sm font-semibold text-foreground">{leads.length} establecimientos encontrados</h2>
+            <span className="text-xs text-muted-foreground">{ciudad}, {estado}</span>
           </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {pageLeads.map((lead, i) => (
+            {leads.map((lead, i) => (
               <LeadCard
                 key={lead.place_id || i}
                 lead={lead}
@@ -220,51 +173,6 @@ export default function Dashboard() {
                 saved={savedIds.has(lead.place_id || lead.nombre_empresa)}
               />
             ))}
-          </div>
-
-          {/* Pagination */}
-          <div className="flex items-center justify-center gap-2 mt-8">
-            <button
-              onClick={() => goToPage(currentPage - 1)}
-              disabled={currentPage === 1 || loadingMore}
-              className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-            >
-              <ChevronLeft className="w-4 h-4" /> Anterior
-            </button>
-
-            <div className="flex gap-1">
-              {Array.from({ length: pagesAvailable }, (_, i) => i + 1).map(page => (
-                <button
-                  key={page}
-                  onClick={() => goToPage(page)}
-                  disabled={loadingMore}
-                  className={`w-9 h-9 rounded-lg text-sm font-semibold transition-all ${
-                    page === currentPage
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
-              {hasMore && (
-                <button
-                  onClick={fetchNextApiPage}
-                  disabled={loadingMore}
-                  className="w-9 h-9 rounded-lg text-sm font-semibold bg-secondary text-secondary-foreground hover:bg-secondary/80 disabled:opacity-40 transition-all flex items-center justify-center"
-                >
-                  {loadingMore ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "…"}
-                </button>
-              )}
-            </div>
-
-            <button
-              onClick={() => goToPage(currentPage + 1)}
-              disabled={(currentPage >= pagesAvailable && !hasMore) || loadingMore}
-              className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-            >
-              {loadingMore ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <>Siguiente <ChevronRight className="w-4 h-4" /></>}
-            </button>
           </div>
         </>
       )}

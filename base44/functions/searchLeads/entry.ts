@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { nicho, ciudad, estado, pais, pageToken } = body;
+    const { nicho, ciudad, estado, pais } = body;
 
     if (!nicho || !ciudad || !estado || !pais) {
       return Response.json({ error: 'Faltan parámetros: nicho, ciudad, estado, pais' }, { status: 400 });
@@ -21,18 +21,15 @@ Deno.serve(async (req) => {
     }
 
     const textQuery = `${nicho} en ${ciudad}, ${estado}, ${pais}`;
-    const requestBody = pageToken
-      ? { pageToken }
-      : { textQuery, maxResultCount: 20, languageCode: 'es' };
 
     const response = await fetch('https://places.googleapis.com/v1/places:searchText', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': apiKey,
-        'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.rating,places.id,places.types,nextPageToken'
+        'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.rating,places.id'
       },
-      body: JSON.stringify(requestBody)
+      body: JSON.stringify({ textQuery, maxResultCount: 20, languageCode: 'es' })
     });
 
     const data = await response.json();
@@ -53,7 +50,7 @@ Deno.serve(async (req) => {
       segmento: nicho
     }));
 
-    return Response.json({ leads, total: leads.length, nextPageToken: data.nextPageToken || null });
+    return Response.json({ leads, total: leads.length });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
