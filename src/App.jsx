@@ -6,6 +6,8 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import Layout from './components/Layout';
+import Landing from './pages/Landing';
+import Admin from './pages/Admin';
 import Dashboard from './pages/Dashboard';
 import Funil from './pages/Funil';
 import Configuraciones from './pages/Configuraciones';
@@ -38,9 +40,10 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       <Route element={<Layout><Outlet /></Layout>}>
-        <Route path="/" element={<Dashboard />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/funil" element={<Funil />} />
         <Route path="/configuraciones" element={<Configuraciones />} />
+        <Route path="/admin" element={<Admin />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
@@ -49,17 +52,19 @@ const AuthenticatedApp = () => {
 
 
 function App() {
-
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
         <Router>
-          <AuthenticatedApp />
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/*" element={<AuthenticatedApp />} />
+          </Routes>
         </Router>
         <Toaster />
       </QueryClientProvider>
     </AuthProvider>
-  )
+  );
 }
 
 export default App

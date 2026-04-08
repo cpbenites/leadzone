@@ -1,17 +1,25 @@
 import { Link, useLocation } from "react-router-dom";
-import { MapPin, KanbanSquare, Settings, LogOut, Zap } from "lucide-react";
+import { MapPin, KanbanSquare, Settings, LogOut, Zap, Shield } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-const navItems = [
-  { to: "/", icon: MapPin, label: "Prospección" },
-  { to: "/funil", icon: KanbanSquare, label: "Mi Embudo" },
-  { to: "/configuraciones", icon: Settings, label: "Configuraciones" },
-];
+
 
 export default function Layout({ children }) {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    base44.auth.me().then(u => setIsAdmin(u?.role === 'admin')).catch(() => {});
+  }, []);
+
+  const navItems = [
+    { to: "/dashboard", icon: MapPin, label: "Prospección" },
+    { to: "/funil", icon: KanbanSquare, label: "Mi Embudo" },
+    { to: "/configuraciones", icon: Settings, label: "Configuraciones" },
+    ...(isAdmin ? [{ to: "/admin", icon: Shield, label: "Admin" }] : []),
+  ];
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
