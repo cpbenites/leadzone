@@ -23,25 +23,25 @@ function KanbanCard({ lead, index }) {
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          className={`bg-white border border-border rounded-xl p-3.5 shadow-sm transition-shadow ${
+          className={`bg-white border border-border rounded-xl p-2.5 shadow-sm transition-shadow ${
             snapshot.isDragging ? "shadow-xl ring-2 ring-primary/30" : "hover:shadow-md"
           }`}
         >
-          <h3 className="font-semibold text-sm text-foreground leading-tight mb-2">{lead.nombre_empresa}</h3>
+          <h3 className="font-semibold text-xs text-foreground leading-tight mb-1.5">{lead.nombre_empresa}</h3>
 
           {lead.segmento && (
-            <span className="inline-block text-xs bg-secondary text-secondary-foreground px-2 py-0.5 rounded-full mb-2">
+            <span className="inline-block text-xs bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded-full mb-1.5">
               {lead.segmento}
             </span>
           )}
 
-          <div className="space-y-1.5 mb-3">
-            <div className="flex items-center gap-1.5">
-              <MapPin className="w-3 h-3 text-muted-foreground shrink-0" />
+          <div className="space-y-1 mb-2">
+            <div className="flex items-center gap-1">
+                <MapPin className="w-3 h-3 text-muted-foreground shrink-0" />
               <span className="text-xs text-muted-foreground">{lead.ciudad}, {lead.estado}</span>
             </div>
             {lead.telefono && (
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1">
                 <Phone className="w-3 h-3 text-muted-foreground shrink-0" />
                 <span className="text-xs text-muted-foreground">{lead.telefono}</span>
               </div>
@@ -59,7 +59,7 @@ function KanbanCard({ lead, index }) {
               href={whatsapp}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-1.5 w-full py-1.5 rounded-lg bg-green-500 text-white text-xs font-semibold hover:bg-green-600 transition-colors"
+              className="flex items-center justify-center gap-1 w-full py-1 rounded-lg bg-green-500 text-white text-xs font-semibold hover:bg-green-600 transition-colors"
             >
               <MessageCircle className="w-3.5 h-3.5" />
               Llamar por WhatsApp
