@@ -251,8 +251,8 @@ export default function Funil() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="text-lg font-semibold">¿Quitar lead del embudo?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción no se puede deshacer. Esto eliminará permanentemente el lead de tu embudo y no podrás recuperarlo.
+            <AlertDialogDescription className="text-sm text-muted-foreground">Esto quitará la tarjeta de tu vista. No te preocupes, el negocio seguirá apareciendo en tus próximas búsquedas.
+
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
