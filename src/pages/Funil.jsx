@@ -148,12 +148,26 @@ export default function Funil() {
     fetchLeads();
   }, []);
 
-  const fetchLeads = () => {
-    // Busca até 500 leads para alimentar bem o CRM e os filtros
-    base44.entities.SavedLead.list("-created_date", 500).then(data => {
-      setLeads(data);
+  const fetchLeads = async () => {
+    try {
+      const currentUser = await base44.auth.me();
+      if (!currentUser) {
+        setLoading(false);
+        return;
+      }
+
+      // Filtrar a busca para trazer apenas os leads onde user_email seja igual ao do utilizador logado
+      const data = await base44.entities.SavedLead.filter({ user_email: currentUser.email });
+      
+      // Ordenar do mais recente para o mais antigo e limitar a 500 leads para performance
+      const sortedData = data.sort((a, b) => new Date(b.created_date) - new Date(a.created_date)).slice(0, 500);
+      
+      setLeads(sortedData);
+    } catch (e) {
+      toast({ title: "Error al cargar", description: e.message, variant: "destructive" });
+    } finally {
       setLoading(false);
-    });
+    }
   };
 
   const handleDeleteLead = (id) => {
