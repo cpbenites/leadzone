@@ -52,47 +52,34 @@ export default function Dashboard() {
       return;
     }
 
-    // Check + increment usage
     setLoading(true);
     setError("");
 
-    let planCheck;
     try {
-      const checkRes = await base44.functions.invoke("trackSearch", { action: "increment" });
-      planCheck = checkRes.data;
-      setUserPlanInfo(planCheck);
-    } catch (e) {
-      setLoading(false);
-      setError("Error al verificar tu plan. Intenta de nuevo.");
-      return;
-    }
-
-    if (!planCheck.allowed) {
-      setLoading(false);
-      setUpgradeReason(planCheck.reason);
-      setShowUpgrade(true);
-      return;
-    }
-
-    setLeads([]);
-    setSearched(true);
-    setSavedIds(new Set());
-    setNextPageToken(null);
-    setNextVariationIndex(null);
-    setHasMore(false);
-
-    try {
+      // 1. Faz a busca de imediato. A segurança e débito estão agora no Backend.
       const res = await base44.functions.invoke("searchLeads", {
         nicho: nicho.trim(), ciudad, estado, pais,
         variationIndex: 0
       });
       const d = res.data;
+
+      // 2. Se a busca teve sucesso, atualiza o contador do cabeçalho
+      base44.functions.invoke("trackSearch", { action: "check" })
+        .then(resCheck => setUserPlanInfo(resCheck.data))
+        .catch(() => {});
+
+      setLeads([]);
+      setSearched(true);
+      setSavedIds(new Set());
+      setNextPageToken(null);
+      setNextVariationIndex(null);
+      setHasMore(false);
+
       const fetchedLeads = d.leads || [];
 
-      // Free plan: only show first 20
-      if (planCheck.plan === "free") {
+      if (userPlanInfo?.plan === "free" || !userPlanInfo) {
         setLeads(fetchedLeads.slice(0, 5));
-        setHasMore(false); // locked for free
+        setHasMore(false);
       } else {
         setLeads(fetchedLeads);
         setNextPageToken(d.nextPageToken || null);
@@ -100,7 +87,14 @@ export default function Dashboard() {
         setHasMore(d.hasMore || false);
       }
     } catch (e) {
-      setError(e.message || "Error al buscar leads.");
+      // 3. Mostra o Upgrade se for limite, ou Erro normal sem debitar saldo.
+      const errorMessage = e.response?.data?.error || e.message || "Error al buscar leads.";
+      if (errorMessage.includes("Límite") || e.response?.status === 403) {
+        setUpgradeReason(errorMessage);
+        setShowUpgrade(true);
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
