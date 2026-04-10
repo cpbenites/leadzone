@@ -1,97 +1,109 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
-// Query variations to get beyond the 60-result API limit
+const PLAN_LIMITS = {
+  free:       { daily: 3,    monthly: null },
+  starter:    { daily: null, monthly: 120 },
+  pro:        { daily: null, monthly: 300 },
+  pro_max:    { daily: null, monthly: 800 },
+  enterprise: { daily: null, monthly: 1500 },
+};
+
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+function thisMonthStr() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; }
+
 function getQueryVariations(nicho, ciudad, estado, pais) {
   const base = `${ciudad}, ${estado}, ${pais}`;
-  return [
-    `${nicho} en ${base}`,
-    `${nicho} cerca de ${base}`,
-    `mejor ${nicho} en ${base}`,
-    `${nicho} popular en ${base}`,
-    `${nicho} recomendado en ${base}`,
-  ];
+  return [`${nicho} en ${base}`, `${nicho} cerca de ${base}`, `mejor ${nicho} en ${base}`, `${nicho} popular en ${base}`];
 }
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
-    if (!user) {
-      return Response.json({ error: 'No autorizado' }, { status: 401 });
-    }
+    if (!user) return Response.json({ error: 'No autorizado' }, { status: 401 });
 
     const body = await req.json();
     const { nicho, ciudad, estado, pais, pageToken, variationIndex = 0 } = body;
 
-    if (!nicho || !ciudad || !estado || !pais) {
-      return Response.json({ error: 'Faltan parámetros' }, { status: 400 });
+    if (!nicho || !ciudad || !estado || !pais) return Response.json({ error: 'Faltan parámetros' }, { status: 400 });
+
+    // --- 1. VERIFICAÇÃO DE LIMITES ---
+    const today = todayStr();
+    const thisMonth = thisMonthStr();
+    const plans = await base44.asServiceRole.entities.UserPlan.filter({ user_email: user.email });
+    let userPlan = plans[0];
+
+    if (!userPlan) {
+      userPlan = await base44.asServiceRole.entities.UserPlan.create({
+        user_email: user.email, plan: 'free', searches_today: 0, searches_this_month: 0, last_search_date: today, month_start_date: thisMonth,
+      });
     }
 
+    if (userPlan.last_search_date !== today) userPlan.searches_today = 0;
+    if (userPlan.month_start_date !== thisMonth) userPlan.searches_this_month = 0;
+
+    const plan = userPlan.plan || 'free';
+    const limits = PLAN_LIMITS[plan] || PLAN_LIMITS.free;
+
+    if (!pageToken) {
+      if (plan === 'free' && userPlan.searches_today >= limits.daily) {
+        return Response.json({ error: `Límite de ${limits.daily} búsquedas diarias alcanzado.`, requiresUpgrade: true }, { status: 403 });
+      }
+      if (plan !== 'free' && limits.monthly && userPlan.searches_this_month >= limits.monthly) {
+        return Response.json({ error: `Límite mensual alcanzado.`, requiresUpgrade: true }, { status: 403 });
+      }
+    }
+
+    // --- 2. CHAMADA AO GOOGLE ---
     const apiKey = Deno.env.get('GOOGLE_PLACES_API_KEY');
-    if (!apiKey) {
-      return Response.json({ error: 'API Key no configurada' }, { status: 500 });
-    }
-
     const variations = getQueryVariations(nicho, ciudad, estado, pais);
     const currentVariation = variationIndex < variations.length ? variationIndex : variations.length - 1;
-    const textQuery = variations[currentVariation];
-
-    // If we have a pageToken, add delay as Google requires
-    if (pageToken) {
-      await new Promise(r => setTimeout(r, 2000));
-    }
-
-    const requestBody = { textQuery, maxResultCount: 20, languageCode: 'es' };
+    
+    if (pageToken) await new Promise(r => setTimeout(r, 2000));
+    const requestBody = { textQuery: variations[currentVariation], maxResultCount: 20, languageCode: 'es' };
     if (pageToken) requestBody.pageToken = pageToken;
 
     const response = await fetch('https://places.googleapis.com/v1/places:searchText', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': apiKey,
-        'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.internationalPhoneNumber,places.nationalPhoneNumber,places.rating,places.id,nextPageToken'
-      },
+      headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': apiKey, 'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.internationalPhoneNumber,places.nationalPhoneNumber,places.rating,places.id,nextPageToken' },
       body: JSON.stringify(requestBody)
     });
 
     const data = await response.json();
+    if (!response.ok) return Response.json({ error: data.error?.message || 'Error API' }, { status: 500 });
 
-    if (!response.ok) {
-      return Response.json({ error: data.error?.message || 'Error en Google Places API' }, { status: 500 });
+    // --- 3. SUCESSO! DEBITAR CRÉDITO ---
+    if (!pageToken) {
+      await base44.asServiceRole.entities.UserPlan.update(userPlan.id, {
+        searches_today: (userPlan.searches_today || 0) + 1,
+        searches_this_month: (userPlan.searches_this_month || 0) + 1,
+        last_search_date: today, month_start_date: thisMonth
+      });
     }
 
+    // --- 4. RETORNAR RESULTADOS ---
     const places = data.places || [];
-    const leads = places.map(place => ({
-      nombre_empresa: place.displayName?.text || 'Sin nombre',
-      direccion: place.formattedAddress || 'Sin dirección',
-      telefono: place.internationalPhoneNumber || place.nationalPhoneNumber || '',
-      rating: place.rating || null,
-      place_id: place.id || '',
-      ciudad,
-      estado,
-      pais,
-      segmento: nicho
+    const leads = places.map(p => ({
+      nombre_empresa: p.displayName?.text || 'Sin nombre',
+      direccion: p.formattedAddress || 'Sin dirección',
+      telefono: p.internationalPhoneNumber || p.nationalPhoneNumber || '',
+      rating: p.rating || null,
+      place_id: p.id || '',
+      ciudad, estado, pais, segmento: nicho
     }));
 
-    // Determine next pagination state
     let nextPageToken = data.nextPageToken || null;
     let nextVariationIndex = currentVariation;
-
-    // If no more pages in this variation, try the next variation
     if (!nextPageToken && currentVariation < variations.length - 1) {
       nextVariationIndex = currentVariation + 1;
-      // Signal frontend to use next variation (no pageToken needed)
       nextPageToken = '__next_variation__';
     }
 
-    const hasMore = !!nextPageToken;
-
     return Response.json({
-      leads,
-      total: leads.length,
+      leads, total: leads.length,
       nextPageToken: nextPageToken === '__next_variation__' ? null : nextPageToken,
-      nextVariationIndex: hasMore ? nextVariationIndex : null,
-      hasMore,
+      nextVariationIndex: nextPageToken || nextPageToken === '__next_variation__' ? nextVariationIndex : null,
+      hasMore: !!nextPageToken,
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
