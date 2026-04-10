@@ -23,11 +23,10 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'No autorizado' }, { status: 401 });
 
     const body = await req.json();
-    const { nicho, ciudad, estado, pais, pageToken, variationIndex = 0 } = body;
+    const { nicho, ciudad, estado, pais, pageToken, variationIndex = 0, deviceId } = body;
 
     if (!nicho || !ciudad || !estado || !pais) return Response.json({ error: 'Faltan parámetros' }, { status: 400 });
 
-    // --- 1. VERIFICAÇÃO DE LIMITES ---
     const today = todayStr();
     const thisMonth = thisMonthStr();
     const plans = await base44.asServiceRole.entities.UserPlan.filter({ user_email: user.email });
@@ -35,8 +34,11 @@ Deno.serve(async (req) => {
 
     if (!userPlan) {
       userPlan = await base44.asServiceRole.entities.UserPlan.create({
-        user_email: user.email, plan: 'free', searches_today: 0, searches_this_month: 0, last_search_date: today, month_start_date: thisMonth,
+        user_email: user.email, plan: 'free', searches_today: 0, searches_this_month: 0, last_search_date: today, month_start_date: thisMonth, device_id: deviceId || 'unknown'
       });
+    } else if (deviceId && userPlan.device_id !== deviceId) {
+      await base44.asServiceRole.entities.UserPlan.update(userPlan.id, { device_id: deviceId });
+      userPlan.device_id = deviceId;
     }
 
     if (userPlan.last_search_date !== today) userPlan.searches_today = 0;
@@ -46,15 +48,29 @@ Deno.serve(async (req) => {
     const limits = PLAN_LIMITS[plan] || PLAN_LIMITS.free;
 
     if (!pageToken) {
-      if (plan === 'free' && userPlan.searches_today >= limits.daily) {
-        return Response.json({ error: `Límite de ${limits.daily} búsquedas diarias alcanzado.`, requiresUpgrade: true }, { status: 403 });
+      if (plan === 'free') {
+        if (userPlan.searches_today >= limits.daily) {
+          return Response.json({ error: `Límite de ${limits.daily} búsquedas diarias alcanzado.`, requiresUpgrade: true }, { status: 403 });
+        }
+
+        if (deviceId && deviceId !== 'unknown') {
+          const devicePlans = await base44.asServiceRole.entities.UserPlan.filter({ device_id: deviceId, last_search_date: today });
+          let deviceSearchesToday = 0;
+          for (const p of devicePlans) {
+            if (p.plan === 'free') deviceSearchesToday += (p.searches_today || 0);
+          }
+          
+          if (deviceSearchesToday >= limits.daily) {
+            return Response.json({ error: `Límite de dispositivo alcanzado. Has usado tus búsquedas gratuitas en otra cuenta desde este mismo equipo.`, requiresUpgrade: true }, { status: 403 });
+          }
+        }
       }
+      
       if (plan !== 'free' && limits.monthly && userPlan.searches_this_month >= limits.monthly) {
         return Response.json({ error: `Límite mensual alcanzado.`, requiresUpgrade: true }, { status: 403 });
       }
     }
 
-    // --- 2. CHAMADA AO GOOGLE ---
     const apiKey = Deno.env.get('GOOGLE_PLACES_API_KEY');
     const variations = getQueryVariations(nicho, ciudad, estado, pais);
     const currentVariation = variationIndex < variations.length ? variationIndex : variations.length - 1;
@@ -72,7 +88,6 @@ Deno.serve(async (req) => {
     const data = await response.json();
     if (!response.ok) return Response.json({ error: data.error?.message || 'Error API' }, { status: 500 });
 
-    // --- 3. SUCESSO! DEBITAR CRÉDITO ---
     if (!pageToken) {
       await base44.asServiceRole.entities.UserPlan.update(userPlan.id, {
         searches_today: (userPlan.searches_today || 0) + 1,
@@ -81,7 +96,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // --- 4. RETORNAR RESULTADOS ---
     const places = data.places || [];
     const leads = places.map(p => ({
       nombre_empresa: p.displayName?.text || 'Sin nombre',

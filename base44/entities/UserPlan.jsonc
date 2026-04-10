@@ -35,6 +35,10 @@
     "month_start_date": {
       "type": "string",
       "title": "In\u00edcio do M\u00eas de Cobran\u00e7a"
+    },
+    "device_id": {
+      "type": "string",
+      "title": "Device ID"
     }
   },
   "required": [

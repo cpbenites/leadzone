@@ -52,18 +52,23 @@ export default function Dashboard() {
       return;
     }
 
+    let deviceId = localStorage.getItem("lz_device_id");
+    if (!deviceId) {
+      deviceId = "dev_" + Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+      localStorage.setItem("lz_device_id", deviceId);
+    }
+
     setLoading(true);
     setError("");
 
     try {
-      // 1. Faz a busca de imediato. A segurança e débito estão agora no Backend.
       const res = await base44.functions.invoke("searchLeads", {
         nicho: nicho.trim(), ciudad, estado, pais,
-        variationIndex: 0
+        variationIndex: 0,
+        deviceId: deviceId
       });
       const d = res.data;
 
-      // 2. Se a busca teve sucesso, atualiza o contador do cabeçalho
       base44.functions.invoke("trackSearch", { action: "check" })
         .then(resCheck => setUserPlanInfo(resCheck.data))
         .catch(() => {});
@@ -87,9 +92,8 @@ export default function Dashboard() {
         setHasMore(d.hasMore || false);
       }
     } catch (e) {
-      // 3. Mostra o Upgrade se for limite, ou Erro normal sem debitar saldo.
       const errorMessage = e.response?.data?.error || e.message || "Error al buscar leads.";
-      if (errorMessage.includes("Límite") || e.response?.status === 403) {
+      if (errorMessage.includes("Límite") || errorMessage.includes("dispositivo") || e.response?.status === 403) {
         setUpgradeReason(errorMessage);
         setShowUpgrade(true);
       } else {
