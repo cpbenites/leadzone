@@ -1,11 +1,19 @@
 import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { Shield, Loader2, ChevronDown, X, CheckCircle, AlertCircle, Search, Users, Zap, Star } from "lucide-react";
+import { Shield, Loader2, ChevronDown, X, CheckCircle, AlertCircle, Search, Users, Zap, Star, Trash2, RefreshCcw } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const PLANS = ["free", "starter", "pro", "pro_max", "enterprise"];
-
 const PLAN_LABELS = { free: "Gratuito", starter: "Starter", pro: "Pro", pro_max: "Pro Max", enterprise: "Enterprise" };
-
 const PLAN_COLORS = {
   free: "bg-slate-100 text-slate-600 border-slate-200",
   starter: "bg-blue-100 text-blue-700 border-blue-200",
@@ -19,7 +27,9 @@ export default function Admin() {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(null);
   const [saving, setSaving] = useState({});
-  const [confirm, setConfirm] = useState(null);
+  const [confirmPlan, setConfirmPlan] = useState(null);
+  const [confirmReset, setConfirmReset] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
   const [notification, setNotification] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const notifTimer = useRef(null);
@@ -46,13 +56,13 @@ export default function Admin() {
 
   const requestPlanChange = (user, newPlan) => {
     if (newPlan === (user.plan?.plan || "free")) return;
-    setConfirm({ user, newPlan });
+    setConfirmPlan({ user, newPlan });
   };
 
   const handlePlanChange = async () => {
-    if (!confirm) return;
-    const { user, newPlan } = confirm;
-    setConfirm(null);
+    if (!confirmPlan) return;
+    const { user, newPlan } = confirmPlan;
+    setConfirmPlan(null);
     setSaving(prev => ({ ...prev, [user.email]: true }));
     try {
       const res = await base44.functions.invoke("updateUserPlan", { userEmail: user.email, newPlan, planId: user.plan?.id || null });
@@ -61,6 +71,37 @@ export default function Admin() {
     } catch (e) {
       showNotification("error", e.message);
     } finally {
+      setSaving(prev => ({ ...prev, [user.email]: false }));
+    }
+  };
+
+  const handleResetCredits = async () => {
+    if (!confirmReset) return;
+    const user = confirmReset;
+    setConfirmReset(null);
+    setSaving(prev => ({ ...prev, [user.email]: true }));
+    try {
+      await base44.functions.invoke("adminUserActions", { action: "reset", userEmail: user.email });
+      setUsers(prev => prev.map(u => u.email === user.email ? { ...u, plan: { ...u.plan, searches_this_month: 0, searches_today: 0 } } : u));
+      showNotification("success", `Créditos de ${user.email} reseteados a 0.`);
+    } catch (e) {
+      showNotification("error", e.message);
+    } finally {
+      setSaving(prev => ({ ...prev, [user.email]: false }));
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!confirmDelete) return;
+    const user = confirmDelete;
+    setConfirmDelete(null);
+    setSaving(prev => ({ ...prev, [user.email]: true }));
+    try {
+      await base44.functions.invoke("adminUserActions", { action: "delete", userEmail: user.email });
+      setUsers(prev => prev.filter(u => u.email !== user.email));
+      showNotification("success", `Usuario ${user.email} eliminado correctamente.`);
+    } catch (e) {
+      showNotification("error", e.message);
       setSaving(prev => ({ ...prev, [user.email]: false }));
     }
   };
@@ -89,26 +130,63 @@ export default function Admin() {
         <div className={`fixed bottom-6 right-6 z-50 flex items-start gap-3 px-4 py-3 rounded-xl shadow-lg border max-w-sm animate-in slide-in-from-bottom-5 ${notification.type === "success" ? "bg-white border-green-200 text-green-800" : "bg-white border-red-200 text-red-800"}`}>
           {notification.type === "success" ? <CheckCircle className="w-4 h-4 text-green-500 shrink-0 mt-0.5" /> : <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />}
           <div className="flex-1">
-            <p className="text-xs font-semibold">{notification.type === "success" ? "Plan actualizado" : "Error"}</p>
+            <p className="text-xs font-semibold">{notification.type === "success" ? "Acción completada" : "Error"}</p>
             <p className="text-xs opacity-80">{notification.message}</p>
           </div>
           <button onClick={() => { clearTimeout(notifTimer.current); setNotification(null); }} className="p-0.5 hover:opacity-60 transition-opacity"><X className="w-3.5 h-3.5" /></button>
         </div>
       )}
 
-      {confirm && (
+      {/* Modal de Cambio de Plan (Original) */}
+      {confirmPlan && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-card border border-border rounded-2xl shadow-2xl p-6 w-full max-w-sm mx-4 animate-in zoom-in-95">
             <h3 className="font-bold text-foreground text-base mb-4">Confirmar cambio de plan</h3>
-            <p className="text-sm text-muted-foreground mb-1">Usuario: <span className="font-semibold text-foreground">{confirm.user.email}</span></p>
-            <p className="text-sm text-muted-foreground mb-6">Nuevo plan: <span className="font-semibold text-foreground">{PLAN_LABELS[confirm.newPlan]}</span></p>
+            <p className="text-sm text-muted-foreground mb-1">Usuario: <span className="font-semibold text-foreground">{confirmPlan.user.email}</span></p>
+            <p className="text-sm text-muted-foreground mb-6">Nuevo plan: <span className="font-semibold text-foreground">{PLAN_LABELS[confirmPlan.newPlan]}</span></p>
             <div className="flex gap-3">
-              <button onClick={() => setConfirm(null)} className="flex-1 py-2.5 rounded-xl border border-border text-sm font-semibold text-muted-foreground hover:bg-secondary transition-colors">Cancelar</button>
+              <button onClick={() => setConfirmPlan(null)} className="flex-1 py-2.5 rounded-xl border border-border text-sm font-semibold text-muted-foreground hover:bg-secondary transition-colors">Cancelar</button>
               <button onClick={handlePlanChange} className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors">Confirmar</button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Modal de Confirmación para Resetear Créditos */}
+      <AlertDialog open={!!confirmReset} onOpenChange={(open) => !open && setConfirmReset(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Resetear créditos del usuario?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esto pondrá el contador de búsquedas de <strong>{confirmReset?.email}</strong> a 0, permitiéndole buscar nuevamente según los límites de su plan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleResetCredits} className="bg-blue-600 hover:bg-blue-700 text-white">
+              Sí, resetear
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Modal de Confirmación para Eliminar Usuario */}
+      <AlertDialog open={!!confirmDelete} onOpenChange={(open) => !open && setConfirmDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar usuario permanentemente?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Se eliminará la cuenta de <strong>{confirmDelete?.email}</strong>, su plan actual y todos los leads guardados en su embudo.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteUser} className="bg-red-500 hover:bg-red-600 focus:ring-red-500 text-white">
+              Sí, eliminar todo
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><Shield className="w-6 h-6 text-primary" /> Panel de Administración</h1>
@@ -146,6 +224,7 @@ export default function Admin() {
                 <th className="px-6 py-4">Email</th>
                 <th className="px-6 py-4 text-center">Búsquedas (Mes)</th>
                 <th className="px-6 py-4">Plan Actual</th>
+                <th className="px-6 py-4 text-center">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -168,12 +247,32 @@ export default function Admin() {
                     <td className="px-6 py-4 text-muted-foreground">{user.email}</td>
                     <td className="px-6 py-4 text-center font-semibold text-foreground">{user.plan?.searches_this_month || 0}</td>
                     <td className="px-6 py-4">
-                      <div className="relative w-40">
+                      <div className="relative w-36">
                         <select value={currentPlan} disabled={isSaving} onChange={e => requestPlanChange(user, e.target.value)} className={`w-full appearance-none text-xs font-semibold px-3 py-2 pr-7 rounded-lg border focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 cursor-pointer transition-colors ${PLAN_COLORS[currentPlan]}`}>
                           {PLANS.map(p => <option key={p} value={p}>{PLAN_LABELS[p]}</option>)}
                         </select>
                         <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none opacity-60" />
-                        {isSaving && <div className="absolute inset-0 flex items-center justify-center bg-background/70 rounded-lg"><Loader2 className="w-4 h-4 animate-spin text-primary" /></div>}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-center gap-2">
+                        <button 
+                          onClick={() => setConfirmReset(user)} 
+                          disabled={isSaving}
+                          className="p-1.5 text-muted-foreground hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors disabled:opacity-50" 
+                          title="Resetear Créditos a 0"
+                        >
+                          <RefreshCcw className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => setConfirmDelete(user)} 
+                          disabled={isSaving || user.role === "admin"}
+                          className="p-1.5 text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50" 
+                          title="Eliminar Usuario"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                        {isSaving && <Loader2 className="w-4 h-4 animate-spin text-primary absolute ml-16" />}
                       </div>
                     </td>
                   </tr>
@@ -181,7 +280,7 @@ export default function Admin() {
               })}
               {filteredUsers.length === 0 && (
                 <tr>
-                  <td colSpan="4" className="px-6 py-12 text-center text-muted-foreground">No se encontraron usuarios.</td>
+                  <td colSpan="5" className="px-6 py-12 text-center text-muted-foreground">No se encontraron usuarios.</td>
                 </tr>
               )}
             </tbody>
