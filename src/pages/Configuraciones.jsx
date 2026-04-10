@@ -56,18 +56,46 @@ const PLANS = [
   }
 ];
 
+const PLAN_LIMITS = {
+  free: { limit: 3, type: "diarias" },
+  starter: { limit: 120, type: "mensuales" },
+  pro: { limit: 300, type: "mensuales" },
+  pro_max: { limit: 800, type: "mensuales" },
+  enterprise: { limit: 1500, type: "mensuales" },
+};
+
+const PLAN_LABELS = {
+  free: "Gratuito",
+  starter: "Starter",
+  pro: "Pro",
+  pro_max: "Pro Max",
+  enterprise: "Enterprise"
+};
+
 export default function Configuraciones() {
   const { toast } = useToast();
   const [user, setUser] = useState(null);
   const [displayName, setDisplayName] = useState("");
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("cuenta");
+  const [planInfo, setPlanInfo] = useState(null);
 
   useEffect(() => {
-    base44.auth.me().then(u => {
+    const loadData = async () => {
+      const u = await base44.auth.me();
       setUser(u);
       setDisplayName(u?.full_name || "");
-    });
+      
+      if (u) {
+        try {
+          const res = await base44.functions.invoke("trackSearch", { action: "check" });
+          setPlanInfo(res.data);
+        } catch (e) {
+          console.error("Error al cargar consumo:", e);
+        }
+      }
+    };
+    loadData();
   }, []);
 
   const handleSave = async () => {
@@ -87,6 +115,17 @@ export default function Configuraciones() {
     { id: "planes", label: "Planes", icon: CreditCard },
     { id: "seguridad", label: "Seguridad", icon: Shield },
   ];
+
+  // Cálculos da Barra de Progresso
+  const currentPlan = planInfo?.plan || "free";
+  const planDetails = PLAN_LIMITS[currentPlan] || PLAN_LIMITS.free;
+  const isFree = currentPlan === "free";
+  const searchesDone = isFree ? (planInfo?.searches_today || 0) : (planInfo?.searches_this_month || 0);
+  const percentage = Math.min(Math.round((searchesDone / planDetails.limit) * 100), 100);
+
+  let progressColor = "bg-primary";
+  if (percentage > 70) progressColor = "bg-warning";
+  if (percentage >= 95) progressColor = "bg-destructive";
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -157,6 +196,30 @@ export default function Configuraciones() {
           >
             {saving ? "Guardando..." : "Guardar Cambios"}
           </button>
+
+          {/* Seção de Consumo Injetada Aqui */}
+          {planInfo && (
+            <div className="pt-6 mt-2 border-t border-border">
+              <h3 className="text-sm font-semibold text-foreground mb-4">Consumo de tu Plan</h3>
+              <div className="flex justify-between items-end mb-2">
+                <span className={`text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wider ${isFree ? 'bg-slate-100 text-slate-600' : 'bg-primary/10 text-primary'}`}>
+                  PLAN {PLAN_LABELS[currentPlan]}
+                </span>
+                <p className="text-sm font-bold text-foreground">
+                  <span className="text-xl">{searchesDone}</span> / {planDetails.limit}
+                </p>
+              </div>
+              <div className="h-2.5 w-full bg-secondary rounded-full overflow-hidden">
+                <div 
+                  className={`h-full rounded-full transition-all duration-1000 ${progressColor}`}
+                  style={{ width: `${percentage}%` }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-2 text-right">
+                {isFree ? 'Las búsquedas se reinician a la medianoche.' : 'El límite se reinicia el próximo mes.'}
+              </p>
+            </div>
+          )}
         </div>
       )}
 
