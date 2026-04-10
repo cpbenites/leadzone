@@ -127,6 +127,15 @@ export default function Dashboard() {
 
   const handleSave = async (lead) => {
     try {
+      // 1. Obter o utilizador atual
+      const currentUser = await base44.auth.me();
+      
+      if (!currentUser) {
+        toast({ title: "Error", description: "Debes iniciar sesión para guardar leads.", variant: "destructive" });
+        return;
+      }
+
+      // 2. Salvar o lead com o user_email
       await base44.entities.SavedLead.create({
         nombre_empresa: lead.nombre_empresa,
         segmento: lead.segmento,
@@ -137,9 +146,11 @@ export default function Dashboard() {
         pais: lead.pais,
         rating: lead.rating,
         place_id: lead.place_id,
-        status_funil: "nuevos_leads"
+        status_funil: "nuevos_leads",
+        user_email: currentUser.email // Associar o lead ao dono
       });
       setSavedIds(prev => new Set([...prev, lead.place_id || lead.nombre_empresa]));
+      toast({ title: "Éxito", description: "Lead guardado en tu embudo." });
     } catch (e) {
       toast({ title: "Error al guardar", description: e.message, variant: "destructive" });
     }
