@@ -183,7 +183,7 @@ export default function Landing() {
               <ArrowRight className="w-5 h-5" />
             </button>
             <p className="text-slate-500 text-sm mt-3">
-              No se requiere tarjeta de crédito para empezar.
+              No requiere tarjeta. Al entrar, selecciona la pestaña <strong>Sign up</strong> para crear tu cuenta.
             </p>
           </div>
 
