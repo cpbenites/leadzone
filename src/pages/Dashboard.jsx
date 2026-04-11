@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Search, MapPin, ChevronDown, Loader2, AlertCircle, Building2, Plus, Lock } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { LOCATIONS } from "../data/locations";
+import { Country, State, City } from "country-state-city";
 import LeadCard from "../components/LeadCard";
 import NichoSuggester from "../components/NichoSuggester";
 import UpgradeModal from "../components/UpgradeModal";
@@ -12,6 +12,14 @@ export default function Dashboard() {
   const [pais, setPais] = useState("");
   const [estado, setEstado] = useState("");
   const [ciudad, setCiudad] = useState("");
+
+  const [availableCountries, setAvailableCountries] = useState([]);
+  const [availableStates, setAvailableStates] = useState([]);
+  const [availableCities, setAvailableCities] = useState([]);
+
+  const [selectedCountryCode, setSelectedCountryCode] = useState("");
+  const [selectedStateCode, setSelectedStateCode] = useState("");
+
   const [nicho, setNicho] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -30,18 +38,38 @@ export default function Dashboard() {
   const [nextVariationIndex, setNextVariationIndex] = useState(null);
   const [hasMore, setHasMore] = useState(false);
 
-  const paises = Object.keys(LOCATIONS);
-  const estados = pais ? Object.keys(LOCATIONS[pais] || {}) : [];
-  const ciudades = estado ? (LOCATIONS[pais]?.[estado] || []) : [];
+  const handlePaisChange = (e) => {
+    const code = e.target.value;
+    const country = availableCountries.find(c => c.isoCode === code);
+    setSelectedCountryCode(code);
+    setPais(country ? country.name : "");
+    setEstado("");
+    setCiudad("");
+    setSelectedStateCode("");
+    setAvailableStates(code ? State.getStatesOfCountry(code) : []);
+    setAvailableCities([]);
+  };
 
-  const handlePaisChange = (v) => { setPais(v); setEstado(""); setCiudad(""); };
-  const handleEstadoChange = (v) => { setEstado(v); setCiudad(""); };
+  const handleEstadoChange = (e) => {
+    const code = e.target.value;
+    const state = availableStates.find(s => s.isoCode === code);
+    setSelectedStateCode(code);
+    setEstado(state ? state.name : "");
+    setCiudad("");
+    setAvailableCities(selectedCountryCode && code ? City.getCitiesOfState(selectedCountryCode, code) : []);
+  };
+
+  const handleCiudadChange = (e) => {
+    setCiudad(e.target.value);
+  };
 
   // Load plan info on mount
   useEffect(() => {
     base44.functions.invoke("trackSearch", { action: "check" })
       .then(res => setUserPlanInfo(res.data))
       .catch(() => {});
+      
+    setAvailableCountries(Country.getAllCountries());
   }, []);
 
   const isFree = userPlanInfo?.plan === "free" || !userPlanInfo;
@@ -203,10 +231,10 @@ export default function Dashboard() {
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">País</label>
             <div className="relative">
-              <select value={pais} onChange={e => handlePaisChange(e.target.value)}
+              <select value={selectedCountryCode} onChange={handlePaisChange}
                 className="w-full appearance-none bg-background border border-input rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring pr-8">
                 <option value="">Seleccionar país...</option>
-                {paises.map(p => <option key={p} value={p}>{p}</option>)}
+                {availableCountries.map(p => <option key={p.isoCode} value={p.isoCode}>{p.name}</option>)}
               </select>
               <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             </div>
@@ -215,10 +243,10 @@ export default function Dashboard() {
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Estado / Provincia</label>
             <div className="relative">
-              <select value={estado} onChange={e => handleEstadoChange(e.target.value)} disabled={!pais}
+              <select value={selectedStateCode} onChange={handleEstadoChange} disabled={!selectedCountryCode}
                 className="w-full appearance-none bg-background border border-input rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring pr-8 disabled:opacity-40 disabled:cursor-not-allowed">
                 <option value="">Seleccionar estado...</option>
-                {estados.map(e => <option key={e} value={e}>{e}</option>)}
+                {availableStates.map(e => <option key={e.isoCode} value={e.isoCode}>{e.name}</option>)}
               </select>
               <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             </div>
@@ -227,10 +255,10 @@ export default function Dashboard() {
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Ciudad</label>
             <div className="relative">
-              <select value={ciudad} onChange={e => setCiudad(e.target.value)} disabled={!estado}
+              <select value={ciudad} onChange={handleCiudadChange} disabled={!selectedStateCode}
                 className="w-full appearance-none bg-background border border-input rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring pr-8 disabled:opacity-40 disabled:cursor-not-allowed">
                 <option value="">Seleccionar ciudad...</option>
-                {ciudades.map(c => <option key={c} value={c}>{c}</option>)}
+                {availableCities.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
               </select>
               <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             </div>
