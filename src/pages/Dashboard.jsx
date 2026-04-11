@@ -7,6 +7,8 @@ import NichoSuggester from "../components/NichoSuggester";
 import UpgradeModal from "../components/UpgradeModal";
 import { useToast } from "@/components/ui/use-toast";
 
+const LATAM_CODES = ["AR", "BO", "BR", "CL", "CO", "CR", "CU", "DO", "EC", "SV", "GT", "HN", "MX", "NI", "PA", "PY", "PE", "PR", "UY", "VE"];
+
 export default function Dashboard() {
   const { toast } = useToast();
   const [pais, setPais] = useState("");
@@ -68,9 +70,18 @@ export default function Dashboard() {
     base44.functions.invoke("trackSearch", { action: "check" })
       .then(res => setUserPlanInfo(res.data))
       .catch(() => {});
-      
-    setAvailableCountries(Country.getAllCountries());
   }, []);
+
+  useEffect(() => {
+    let allCountries = Country.getAllCountries();
+    const currentPlan = userPlanInfo?.plan || "free";
+
+    if (currentPlan === "free") {
+      allCountries = allCountries.filter(c => LATAM_CODES.includes(c.isoCode));
+    }
+    
+    setAvailableCountries(allCountries);
+  }, [userPlanInfo]);
 
   const isFree = userPlanInfo?.plan === "free" || !userPlanInfo;
 
