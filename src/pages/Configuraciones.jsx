@@ -11,7 +11,7 @@ const PLANS = [
     period: "/mes",
     icon: Zap,
     color: "text-slate-500",
-    features: ["3 búsquedas/día", "5 resultados por búsqueda", "Embudo CRM básico"],
+    features: ["3 búsquedas/día", "Solo Latinoamérica", "5 resultados por búsqueda", "Embudo CRM básico"],
     popular: false
   },
   {
@@ -21,7 +21,7 @@ const PLANS = [
     period: "/mes",
     icon: Zap,
     color: "text-blue-500",
-    features: ["120 búsquedas/mes", "Paginación completa", "Soporte por email"],
+    features: ["120 búsquedas/mes", "Búsqueda Global (Mundial)", "Paginación completa", "Soporte por email"],
     popular: false
   },
   {
@@ -31,7 +31,7 @@ const PLANS = [
     period: "/mes",
     icon: Star,
     color: "text-purple-500",
-    features: ["300 búsquedas/mes", "Paginación completa", "CRM completo", "Soporte prioritario"],
+    features: ["300 búsquedas/mes", "Búsqueda Global (Mundial)", "CRM completo", "Soporte prioritario"],
     popular: true
   },
   {
