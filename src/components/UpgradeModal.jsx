@@ -9,7 +9,7 @@ const PLANS = [
     icon: Zap,
     color: "text-blue-500",
     bg: "bg-blue-50 border-blue-200",
-    features: ["120 búsquedas/mes", "Paginación completa", "Soporte por email"],
+    features: ["120 búsquedas/mes", "Búsqueda Global (Mundial)", "Paginación completa", "Soporte por email"],
   },
   {
     id: "pro",
@@ -20,7 +20,7 @@ const PLANS = [
     color: "text-purple-500",
     bg: "bg-purple-50 border-purple-200",
     popular: true,
-    features: ["300 búsquedas/mes", "Paginación completa", "CRM completo", "Soporte prioritario"],
+    features: ["300 búsquedas/mes", "Búsqueda Global (Mundial)", "CRM completo", "Soporte prioritario"],
   },
   {
     id: "pro_max",
@@ -30,7 +30,7 @@ const PLANS = [
     icon: Rocket,
     color: "text-orange-500",
     bg: "bg-orange-50 border-orange-200",
-    features: ["800 búsquedas/mes", "Todo lo del Pro", "Exportar CSV"],
+    features: ["800 búsquedas/mes", "Todo lo del Pro", "Exportar CSV", "Filtro de Calificación Estratégica"],
   },
   {
     id: "enterprise",
@@ -40,7 +40,7 @@ const PLANS = [
     icon: Building2,
     color: "text-amber-600",
     bg: "bg-amber-50 border-amber-200",
-    features: ["1500+ búsquedas/mes", "Todo lo del Pro Max", "API access", "Soporte dedicado"],
+    features: ["1500+ búsquedas/mes", "Todo lo del Pro Max", "API access", "Soporte dedicado", "Filtro de Calificación Estratégica"],
   },
 ];
 
