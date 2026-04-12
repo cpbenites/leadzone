@@ -42,7 +42,7 @@ const PLANS = [
     period: "/mes",
     tag: null,
     description: "Para equipos comerciales.",
-    features: ["800 búsquedas/mes", "Todo lo del Pro", "Filtros avanzados", "Exportar CSV"],
+    features: ["800 búsquedas/mes", "Todo lo del Pro", "Filtros avanzados", "Exportar CSV", "Filtro de Calificación Estratégica"],
     cta: "Elegir Pro Max",
     highlight: false,
   },
@@ -53,7 +53,7 @@ const PLANS = [
     period: "/mes",
     tag: null,
     description: "Para distribuidores y agencias.",
-    features: ["1500+ búsquedas/mes", "Todo lo del Pro Max", "API access", "Soporte dedicado"],
+    features: ["1500+ búsquedas/mes", "Todo lo del Pro Max", "API access", "Soporte dedicado", "Filtro de Calificación Estratégica"],
     cta: "Elegir Enterprise",
     highlight: false,
   },
@@ -93,6 +93,11 @@ const FEATURES = [
     title: "CRM Visual Integrado",
     desc: "Guarda tus leads y muévelos por un embudo de ventas intuitivo sin salir de la plataforma.",
   },
+  {
+    icon: "⭐",
+    title: "Radar de Oportunidades",
+    desc: "Filtra negocios por su reputación en Google para encontrar clientes que necesitan tus servicios de marketing hoy mismo.",
+  }
 ];
 
 const TESTIMONIALS = [
@@ -261,7 +266,7 @@ export default function Landing() {
           </h2>
           <p className="text-slate-500 text-lg">Todo lo que necesitas para prospectar, contactar y gestionar tus leads.</p>
         </div>
-        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {FEATURES.map(({ icon, title, desc }) => (
             <div key={title} className="bg-slate-50 border border-slate-200 rounded-2xl p-6">
               <div className="text-3xl mb-4">{icon}</div>

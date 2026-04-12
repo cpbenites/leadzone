@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'No autorizado' }, { status: 401 });
 
     const body = await req.json();
-    const { nicho, ciudad, estado, pais, pageToken, variationIndex = 0, deviceId } = body;
+    const { nicho, ciudad, estado, pais, pageToken, variationIndex = 0, deviceId, ratingFilter } = body;
 
     if (!nicho || !ciudad || !estado || !pais) return Response.json({ error: 'Faltan parámetros' }, { status: 400 });
 
@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
     }
 
     const places = data.places || [];
-    const leads = places.map(p => ({
+    let leads = places.map(p => ({
       nombre_empresa: p.displayName?.text || 'Sin nombre',
       direccion: p.formattedAddress || 'Sin dirección',
       telefono: p.internationalPhoneNumber || p.nationalPhoneNumber || '',
@@ -105,6 +105,16 @@ Deno.serve(async (req) => {
       place_id: p.id || '',
       ciudad, estado, pais, segmento: nicho
     }));
+
+    if (ratingFilter && ratingFilter !== "all") {
+      leads = leads.filter(lead => {
+        if (lead.rating === null) return false;
+        if (ratingFilter === "help") return lead.rating < 4.0;
+        if (ratingFilter === "growth") return lead.rating >= 4.0 && lead.rating <= 4.5;
+        if (ratingFilter === "elite") return lead.rating > 4.5;
+        return true;
+      });
+    }
 
     let nextPageToken = data.nextPageToken || null;
     let nextVariationIndex = currentVariation;

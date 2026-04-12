@@ -41,7 +41,7 @@ const PLANS = [
     period: "/mes",
     icon: Star,
     color: "text-orange-500",
-    features: ["800 búsquedas/mes", "Todo lo del Pro", "Exportar CSV"],
+    features: ["800 búsquedas/mes", "Todo lo del Pro", "Exportar CSV", "Filtro de Calificación Estratégica (Encuentra negocios con malas notas)"],
     popular: false
   },
   {
@@ -51,7 +51,7 @@ const PLANS = [
     period: "/mes",
     icon: Building2,
     color: "text-amber-500",
-    features: ["1500+ búsquedas/mes", "Todo lo del Pro Max", "API access", "Soporte dedicado"],
+    features: ["1500+ búsquedas/mes", "Todo lo del Pro Max", "API access", "Soporte dedicado", "Filtro de Calificación Estratégica (Encuentra negocios con malas notas)"],
     popular: false
   }
 ];

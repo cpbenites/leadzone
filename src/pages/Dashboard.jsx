@@ -23,6 +23,7 @@ export default function Dashboard() {
   const [selectedStateCode, setSelectedStateCode] = useState("");
 
   const [nicho, setNicho] = useState("");
+  const [ratingFilter, setRatingFilter] = useState("all");
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [leads, setLeads] = useState([]);
@@ -84,6 +85,7 @@ export default function Dashboard() {
   }, [userPlanInfo]);
 
   const isFree = userPlanInfo?.plan === "free" || !userPlanInfo;
+  const canUseRatingFilter = userPlanInfo?.plan === "pro_max" || userPlanInfo?.plan === "enterprise";
 
   const handleSearch = async () => {
     if (!pais || !estado || !ciudad || !nicho.trim()) {
@@ -104,7 +106,8 @@ export default function Dashboard() {
       const res = await base44.functions.invoke("searchLeads", {
         nicho: nicho.trim(), ciudad, estado, pais,
         variationIndex: 0,
-        deviceId: deviceId
+        deviceId: deviceId,
+        ratingFilter
       });
       const d = res.data;
 
@@ -154,7 +157,8 @@ export default function Dashboard() {
       const res = await base44.functions.invoke("searchLeads", {
         nicho: nicho.trim(), ciudad, estado, pais,
         pageToken: nextPageToken || undefined,
-        variationIndex: nextVariationIndex ?? 0
+        variationIndex: nextVariationIndex ?? 0,
+        ratingFilter
       });
       const d = res.data;
       const fetchedLeads = d.leads || [];
@@ -243,7 +247,7 @@ export default function Dashboard() {
 
       {/* Filters Card */}
       <div className="bg-card border border-border rounded-2xl p-6 mb-8 shadow-sm">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">País</label>
             <div className="relative">
@@ -288,6 +292,27 @@ export default function Dashboard() {
                 onKeyDown={e => e.key === "Enter" && handleSearch()}
                 placeholder="Ej: restaurantes, clínicas..."
                 className="w-full bg-background border border-input rounded-lg pl-9 pr-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground" />
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Reputación</label>
+            <div className="relative">
+              <select 
+                value={ratingFilter} 
+                onChange={e => setRatingFilter(e.target.value)} 
+                disabled={!canUseRatingFilter}
+                className="w-full appearance-none bg-background border border-input rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring pr-8 disabled:opacity-40 disabled:cursor-not-allowed">
+                <option value="all">Todas las Notas</option>
+                <option value="help">Necesitan Ayuda (⭐ &lt; 4.0)</option>
+                <option value="growth">En Crecimiento (⭐ 4.0 - 4.5)</option>
+                <option value="elite">Elite (⭐ &gt; 4.5)</option>
+              </select>
+              {!canUseRatingFilter ? (
+                <Lock className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              ) : (
+                <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              )}
             </div>
           </div>
         </div>
