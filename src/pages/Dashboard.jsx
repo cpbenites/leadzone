@@ -157,7 +157,12 @@ export default function Dashboard() {
         variationIndex: nextVariationIndex ?? 0
       });
       const d = res.data;
-      setLeads(prev => [...prev, ...(d.leads || [])]);
+      const fetchedLeads = d.leads || [];
+      setLeads(prevLeads => {
+        const existingIds = new Set(prevLeads.map(lead => lead.place_id));
+        const uniqueNewLeads = fetchedLeads.filter(lead => !existingIds.has(lead.place_id));
+        return [...prevLeads, ...uniqueNewLeads];
+      });
       setNextPageToken(d.nextPageToken || null);
       setNextVariationIndex(d.nextVariationIndex ?? null);
       setHasMore(d.hasMore || false);
