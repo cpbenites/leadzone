@@ -1,16 +1,18 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Route, Routes, Outlet } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import Layout from './components/Layout';
 import Landing from './pages/Landing';
-import Admin from './pages/Admin';
-import Dashboard from './pages/Dashboard';
-import Funil from './pages/Funil';
-import Configuraciones from './pages/Configuraciones';
+
+const Admin = lazy(() => import('./pages/Admin'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Funil = lazy(() => import('./pages/Funil'));
+const Configuraciones = lazy(() => import('./pages/Configuraciones'));
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -38,15 +40,17 @@ const AuthenticatedApp = () => {
 
   // Render the main app
   return (
-    <Routes>
-      <Route element={<Layout><Outlet /></Layout>}>
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/funil" element={<Funil />} />
-        <Route path="/configuraciones" element={<Configuraciones />} />
-        <Route path="/admin" element={<Admin />} />
-      </Route>
-      <Route path="*" element={<PageNotFound />} />
-    </Routes>
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center">Carregando...</div>}>
+      <Routes>
+        <Route element={<Layout><Outlet /></Layout>}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/funil" element={<Funil />} />
+          <Route path="/configuraciones" element={<Configuraciones />} />
+          <Route path="/admin" element={<Admin />} />
+        </Route>
+        <Route path="*" element={<PageNotFound />} />
+      </Routes>
+    </Suspense>
   );
 };
 
