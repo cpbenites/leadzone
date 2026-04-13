@@ -13,6 +13,9 @@ function thisMonthStr() { const d = new Date(); return `${d.getFullYear()}-${Str
 
 function getQueryVariations(nicho, ciudad, estado, pais) {
   const base = `${ciudad}, ${estado}, ${pais}`;
+  if (!nicho || nicho.trim() === "") {
+    return [`empresas en ${base}`, `negocios en ${base}`, `comercios en ${base}`, `servicios en ${base}`];
+  }
   return [`${nicho} en ${base}`, `${nicho} cerca de ${base}`, `mejor ${nicho} en ${base}`, `${nicho} popular en ${base}`];
 }
 
@@ -25,7 +28,7 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { nicho, ciudad, estado, pais, pageToken, variationIndex = 0, deviceId, ratingFilter } = body;
 
-    if (!nicho || !ciudad || !estado || !pais) return Response.json({ error: 'Faltan parámetros' }, { status: 400 });
+    if (!ciudad || !estado || !pais) return Response.json({ error: 'Faltan parámetros' }, { status: 400 });
 
     const today = todayStr();
     const thisMonth = thisMonthStr();
@@ -88,14 +91,6 @@ Deno.serve(async (req) => {
     const data = await response.json();
     if (!response.ok) return Response.json({ error: data.error?.message || 'Error API' }, { status: 500 });
 
-    if (!pageToken) {
-      await base44.asServiceRole.entities.UserPlan.update(userPlan.id, {
-        searches_today: (userPlan.searches_today || 0) + 1,
-        searches_this_month: (userPlan.searches_this_month || 0) + 1,
-        last_search_date: today, month_start_date: thisMonth
-      });
-    }
-
     const places = data.places || [];
     let leads = places.map(p => ({
       nombre_empresa: p.displayName?.text || 'Sin nombre',
@@ -113,6 +108,14 @@ Deno.serve(async (req) => {
         if (ratingFilter === "growth") return lead.rating >= 4.0 && lead.rating <= 4.5;
         if (ratingFilter === "elite") return lead.rating > 4.5;
         return true;
+      });
+    }
+
+    if (!pageToken && leads.length > 0) {
+      await base44.asServiceRole.entities.UserPlan.update(userPlan.id, {
+        searches_today: (userPlan.searches_today || 0) + 1,
+        searches_this_month: (userPlan.searches_this_month || 0) + 1,
+        last_search_date: today, month_start_date: thisMonth
       });
     }
 

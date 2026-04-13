@@ -88,8 +88,8 @@ export default function Dashboard() {
   const canUseRatingFilter = userPlanInfo?.plan === "pro_max" || userPlanInfo?.plan === "enterprise";
 
   const handleSearch = async () => {
-    if (!pais || !estado || !ciudad || !nicho.trim()) {
-      toast({ title: "Campos incompletos", description: "Selecciona País, Estado, Ciudad e ingresa un nicho.", variant: "destructive" });
+    if (!pais || !estado || !ciudad) {
+      toast({ title: "Campos incompletos", description: "Selecciona País, Estado y Ciudad.", variant: "destructive" });
       return;
     }
 
@@ -104,7 +104,7 @@ export default function Dashboard() {
 
     try {
       const res = await base44.functions.invoke("searchLeads", {
-        nicho: nicho.trim(), ciudad, estado, pais,
+        nicho: nicho ? nicho.trim() : "", ciudad, estado, pais,
         variationIndex: 0,
         deviceId: deviceId,
         ratingFilter
@@ -155,7 +155,7 @@ export default function Dashboard() {
     setLoadingMore(true);
     try {
       const res = await base44.functions.invoke("searchLeads", {
-        nicho: nicho.trim(), ciudad, estado, pais,
+        nicho: nicho ? nicho.trim() : "", ciudad, estado, pais,
         pageToken: nextPageToken || undefined,
         variationIndex: nextVariationIndex ?? 0,
         ratingFilter
@@ -317,10 +317,10 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {ciudad && nicho && (
+        {ciudad && (
           <div className="mb-4 flex items-center gap-2 text-xs text-muted-foreground">
             <MapPin className="w-3.5 h-3.5 text-primary" />
-            <span>Buscando: <strong className="text-foreground">"{nicho} en {ciudad}, {estado}, {pais}"</strong></span>
+            <span>Buscando: <strong className="text-foreground">{nicho ? `"${nicho} en ${ciudad}, ${estado}, ${pais}"` : `"Empresas en ${ciudad}, ${estado}, ${pais}"`}</strong></span>
           </div>
         )}
 

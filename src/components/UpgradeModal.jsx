@@ -91,7 +91,7 @@ export default function UpgradeModal({ onClose, reason }) {
                         ? "bg-primary text-primary-foreground hover:bg-primary/90"
                         : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
                     }`}
-                    onClick={() => alert(`Contacta al administrador para activar el plan ${plan.name}.`)}>
+                    onClick={() => alert(`Contacta al administrador para activar el plan ${plan.name}.`)}
                   >
                     Elegir Plan
                   </button>
