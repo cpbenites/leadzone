@@ -303,7 +303,9 @@ export default function Landing() {
           <div className="relative">
             <img
               src="https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&q=80"
-              alt="Distribuidor con mapa de rutas"
+              alt="Distribuidor de productos verificando el mapa de rutas logísticas"
+              loading="lazy"
+              decoding="async"
               className="rounded-2xl shadow-2xl w-full object-cover h-72"
             />
             <div className="absolute -bottom-4 -left-4 bg-white text-slate-900 text-sm font-bold px-4 py-3 rounded-xl shadow-xl flex items-center gap-2">
