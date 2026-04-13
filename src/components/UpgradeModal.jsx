@@ -30,7 +30,7 @@ const PLANS = [
     icon: Rocket,
     color: "text-orange-500",
     bg: "bg-orange-50 border-orange-200",
-    features: ["800 búsquedas/mes", "Todo lo del Pro", "Exportar CSV", "Filtro de Calificación Estratégica"],
+    features: ["800 búsquedas/mes", "Todo lo del Pro", "Exportar CSV", "Filtro de Calificación Estratégica", "Enlaces directos a Web e Instagram"],
   },
   {
     id: "enterprise",
@@ -40,7 +40,7 @@ const PLANS = [
     icon: Building2,
     color: "text-amber-600",
     bg: "bg-amber-50 border-amber-200",
-    features: ["1500+ búsquedas/mes", "Todo lo del Pro Max", "API access", "Soporte dedicado", "Filtro de Calificación Estratégica"],
+    features: ["1500+ búsquedas/mes", "Todo lo del Pro Max", "API access", "Soporte dedicado", "Filtro de Calificación Estratégica", "Enlaces directos a Web e Instagram"],
   },
 ];
 

@@ -42,7 +42,7 @@ const PLANS = [
     period: "/mes",
     tag: null,
     description: "Para equipos comerciales.",
-    features: ["800 búsquedas/mes", "Todo lo del Pro", "Filtros avanzados", "Exportar CSV", "Filtro de Calificación Estratégica"],
+    features: ["800 búsquedas/mes", "Todo lo del Pro", "Exportar CSV", "Filtro de Calificación Estratégica", "Enlaces directos a Web e Instagram"],
     cta: "Elegir Pro Max",
     highlight: false,
   },
@@ -53,7 +53,7 @@ const PLANS = [
     period: "/mes",
     tag: null,
     description: "Para distribuidores y agencias.",
-    features: ["1500+ búsquedas/mes", "Todo lo del Pro Max", "API access", "Soporte dedicado", "Filtro de Calificación Estratégica"],
+    features: ["1500+ búsquedas/mes", "Todo lo del Pro Max", "API access", "Soporte dedicado", "Filtro de Calificación Estratégica", "Enlaces directos a Web e Instagram"],
     cta: "Elegir Enterprise",
     highlight: false,
   },
@@ -97,6 +97,11 @@ const FEATURES = [
     icon: "⭐",
     title: "Radar de Oportunidades",
     desc: "Filtra negocios por su reputación en Google para encontrar clientes que necesitan tus servicios de marketing hoy mismo.",
+  },
+  {
+    icon: "🌐",
+    title: "Inteligencia Social",
+    desc: "Ahorra horas de investigación: Accede al Sitio Web y al Instagram de tu prospecto con un solo clic desde tu CRM.",
   }
 ];
 
@@ -266,7 +271,7 @@ export default function Landing() {
           </h2>
           <p className="text-slate-500 text-lg">Todo lo que necesitas para prospectar, contactar y gestionar tus leads.</p>
         </div>
-        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {FEATURES.map(({ icon, title, desc }) => (
             <div key={title} className="bg-slate-50 border border-slate-200 rounded-2xl p-6">
               <div className="text-3xl mb-4">{icon}</div>
