@@ -1,13 +1,81 @@
 import { useState, useEffect } from "react";
-import { Search, MapPin, ChevronDown, Loader2, AlertCircle, Building2, Plus, Lock } from "lucide-react";
+import { Search, MapPin, ChevronDown, Loader2, AlertCircle, Building2, Plus, Lock, Check, ChevronsUpDown } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Country, State, City } from "country-state-city";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import LeadCard from "../components/LeadCard";
 import NichoSuggester from "../components/NichoSuggester";
 import UpgradeModal from "../components/UpgradeModal";
 import { useToast } from "@/components/ui/use-toast";
 
 const LATAM_CODES = ["AR", "BO", "BR", "CL", "CO", "CR", "CU", "DO", "EC", "SV", "GT", "HN", "MX", "NI", "PA", "PY", "PE", "PR", "UY", "VE"];
+
+function Combobox({ options, value, onChange, placeholder, disabled, emptyText }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          disabled={disabled}
+          className="w-full justify-between bg-background border border-input rounded-lg px-3 py-2.5 text-sm font-normal text-foreground hover:bg-background hover:text-foreground h-auto disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <span className="truncate">
+            {value
+              ? options.find((opt) => opt.value === value)?.label
+              : placeholder}
+          </span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+        <Command>
+          <CommandInput placeholder={`Buscar...`} />
+          <CommandList>
+            <CommandEmpty>{emptyText || "No se encontraron resultados."}</CommandEmpty>
+            <CommandGroup>
+              {options.map((option) => (
+                <CommandItem
+                  key={option.value}
+                  value={option.label}
+                  onSelect={() => {
+                    onChange(option.value);
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      value === option.value ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  {option.label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 export default function Dashboard() {
   const { toast } = useToast();
@@ -41,8 +109,7 @@ export default function Dashboard() {
   const [nextVariationIndex, setNextVariationIndex] = useState(null);
   const [hasMore, setHasMore] = useState(false);
 
-  const handlePaisChange = (e) => {
-    const code = e.target.value;
+  const handlePaisChange = (code) => {
     const country = availableCountries.find(c => c.isoCode === code);
     setSelectedCountryCode(code);
     setPais(country ? country.name : "");
@@ -53,8 +120,7 @@ export default function Dashboard() {
     setAvailableCities([]);
   };
 
-  const handleEstadoChange = (e) => {
-    const code = e.target.value;
+  const handleEstadoChange = (code) => {
     const state = availableStates.find(s => s.isoCode === code);
     setSelectedStateCode(code);
     setEstado(state ? state.name : "");
@@ -62,8 +128,8 @@ export default function Dashboard() {
     setAvailableCities(selectedCountryCode && code ? City.getCitiesOfState(selectedCountryCode, code) : []);
   };
 
-  const handleCiudadChange = (e) => {
-    setCiudad(e.target.value);
+  const handleCiudadChange = (name) => {
+    setCiudad(name);
   };
 
   // Load plan info on mount
@@ -251,38 +317,37 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">País</label>
-            <div className="relative">
-              <select value={selectedCountryCode} onChange={handlePaisChange}
-                className="w-full appearance-none bg-background border border-input rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring pr-8">
-                <option value="">Seleccionar país...</option>
-                {availableCountries.map(p => <option key={p.isoCode} value={p.isoCode}>{p.name}</option>)}
-              </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-            </div>
+            <Combobox
+              options={availableCountries.map(p => ({ label: p.name, value: p.isoCode }))}
+              value={selectedCountryCode}
+              onChange={handlePaisChange}
+              placeholder="Seleccionar país..."
+              emptyText="País no encontrado."
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Estado / Provincia</label>
-            <div className="relative">
-              <select value={selectedStateCode} onChange={handleEstadoChange} disabled={!selectedCountryCode}
-                className="w-full appearance-none bg-background border border-input rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring pr-8 disabled:opacity-40 disabled:cursor-not-allowed">
-                <option value="">Seleccionar estado...</option>
-                {availableStates.map(e => <option key={e.isoCode} value={e.isoCode}>{e.name}</option>)}
-              </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-            </div>
+            <Combobox
+              disabled={!selectedCountryCode}
+              options={availableStates.map(e => ({ label: e.name, value: e.isoCode }))}
+              value={selectedStateCode}
+              onChange={handleEstadoChange}
+              placeholder="Seleccionar estado..."
+              emptyText="Estado no encontrado."
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Ciudad</label>
-            <div className="relative">
-              <select value={ciudad} onChange={handleCiudadChange} disabled={!selectedStateCode}
-                className="w-full appearance-none bg-background border border-input rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring pr-8 disabled:opacity-40 disabled:cursor-not-allowed">
-                <option value="">Seleccionar ciudad...</option>
-                {availableCities.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
-              </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-            </div>
+            <Combobox
+              disabled={!selectedStateCode}
+              options={availableCities.map(c => ({ label: c.name, value: c.name }))}
+              value={ciudad}
+              onChange={handleCiudadChange}
+              placeholder="Seleccionar ciudad..."
+              emptyText="Ciudad no encontrada."
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">
