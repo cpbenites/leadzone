@@ -19,6 +19,21 @@ function getQueryVariations(nicho, ciudad, estado, pais) {
   return [`${nicho} en ${base}`, `${nicho} cerca de ${base}`, `mejor ${nicho} en ${base}`, `${nicho} popular en ${base}`];
 }
 
+function isMobileNumber(phone) {
+  if (!phone) return false;
+  // Limpa o número de espaços, parênteses e traços
+  const cleanPhone = phone.replace(/[\s\(\)\-]/g, '');
+  
+  // Regra específica para o Brasil (+55): Verifica se logo a seguir ao DDD (2 dígitos) começa por '9'
+  if (cleanPhone.startsWith('+55')) {
+    // Ex: +55119... O índice 5 da string limpa corresponde ao primeiro dígito após o DDD
+    return cleanPhone.charAt(5) === '9'; 
+  }
+  
+  // Para outros países, como regra geral provisória, se tem telefone já recebe uma pontuação positiva
+  return true; 
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -111,6 +126,24 @@ Deno.serve(async (req) => {
         return true;
       });
     }
+
+    leads.sort((a, b) => {
+      const aIsMobile = isMobileNumber(a.telefono);
+      const bIsMobile = isMobileNumber(b.telefono);
+      const aHasPhone = !!a.telefono;
+      const bHasPhone = !!b.telefono;
+
+      // 1º Prioridade: Tem telemóvel (celular)
+      if (aIsMobile && !bIsMobile) return -1;
+      if (!aIsMobile && bIsMobile) return 1;
+      
+      // 2º Prioridade: Tem telefone fixo (melhor que não ter nenhum)
+      if (aHasPhone && !bHasPhone) return -1;
+      if (!aHasPhone && bHasPhone) return 1;
+      
+      // 3º Prioridade: Mantém a ordem original do Google (relevância)
+      return 0;
+    });
 
     if (!pageToken && leads.length > 0) {
       await base44.asServiceRole.entities.UserPlan.update(userPlan.id, {
