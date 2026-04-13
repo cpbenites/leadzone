@@ -198,6 +198,7 @@ export default function Dashboard() {
         pais: lead.pais,
         rating: lead.rating,
         place_id: lead.place_id,
+        website: lead.website,
         status_funil: "nuevos_leads",
         user_email: currentUser.email // Associar o lead ao dono
       });
@@ -363,6 +364,8 @@ export default function Dashboard() {
                 lead={lead}
                 onSave={handleSave}
                 saved={savedIds.has(lead.place_id || lead.nombre_empresa)}
+                canViewSocials={userPlanInfo?.plan === 'pro_max' || userPlanInfo?.plan === 'enterprise'}
+                onUpgradeClick={() => { setUpgradeReason("Funcionalidad Premium: Mejora a Pro Max o Enterprise para acceder a Sitios Web e Instagram directamente."); setShowUpgrade(true); }}
               />
             ))}
           </div>

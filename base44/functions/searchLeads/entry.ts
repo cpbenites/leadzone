@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
 
     const response = await fetch('https://places.googleapis.com/v1/places:searchText', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': apiKey, 'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.internationalPhoneNumber,places.nationalPhoneNumber,places.rating,places.id,nextPageToken' },
+      headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': apiKey, 'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.internationalPhoneNumber,places.nationalPhoneNumber,places.rating,places.id,places.websiteUri,nextPageToken' },
       body: JSON.stringify(requestBody)
     });
 
@@ -98,6 +98,7 @@ Deno.serve(async (req) => {
       telefono: p.internationalPhoneNumber || p.nationalPhoneNumber || '',
       rating: p.rating || null,
       place_id: p.id || '',
+      website: p.websiteUri || '',
       ciudad, estado, pais, segmento: nicho
     }));
 

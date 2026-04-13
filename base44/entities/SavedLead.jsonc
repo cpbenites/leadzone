@@ -49,6 +49,10 @@
       "type": "string",
       "title": "Place ID"
     },
+    "website": {
+      "type": "string",
+      "title": "Website"
+    },
     "notas": {
       "type": "string",
       "title": "Notas"

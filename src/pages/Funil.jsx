@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import { Phone, MapPin, Star, MessageCircle, Loader2, Trash2, Copy, Check, Search, X, Plus } from "lucide-react";
+import { Phone, MapPin, Star, MessageCircle, Loader2, Trash2, Copy, Check, Search, X, Plus, Globe, Instagram, Lock } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import UpgradeModal from "../components/UpgradeModal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,7 +24,7 @@ const COLUMNS = [
 
 const LEADS_PER_PAGE = 10;
 
-function KanbanCard({ lead, index, onDelete }) {
+function KanbanCard({ lead, index, onDelete, canViewSocials, onUpgradeClick }) {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
 
@@ -107,6 +108,50 @@ function KanbanCard({ lead, index, onDelete }) {
             )}
           </div>
 
+          <div className="flex items-center gap-2 mb-2.5">
+            {canViewSocials ? (
+              <>
+                {lead.website && (
+                  <a
+                    href={lead.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-[10px] font-medium text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-1.5 py-0.5 rounded transition-colors"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <Globe className="w-3 h-3" /> Website
+                  </a>
+                )}
+                <a
+                  href={`https://www.instagram.com/explore/search/keyword/?q=${encodeURIComponent(lead.nombre_empresa)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-[10px] font-medium text-pink-600 hover:text-pink-700 bg-pink-50 hover:bg-pink-100 px-1.5 py-0.5 rounded transition-colors"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <Instagram className="w-3 h-3" /> Insta
+                </a>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onUpgradeClick(); }}
+                  className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground bg-secondary hover:bg-secondary/80 px-1.5 py-0.5 rounded transition-colors"
+                >
+                  <Globe className="w-3 h-3" />
+                  <Lock className="w-2.5 h-2.5 ml-0.5" />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onUpgradeClick(); }}
+                  className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground bg-secondary hover:bg-secondary/80 px-1.5 py-0.5 rounded transition-colors"
+                >
+                  <Instagram className="w-3 h-3" />
+                  <Lock className="w-2.5 h-2.5 ml-0.5" />
+                </button>
+              </>
+            )}
+          </div>
+
           {whatsapp && (
             <a
               href={whatsapp}
@@ -130,6 +175,8 @@ export default function Funil() {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [leadToDelete, setLeadToDelete] = useState(null);
+  const [userPlanInfo, setUserPlanInfo] = useState(null);
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   // Estados de Filtro
   const [searchQuery, setSearchQuery] = useState("");
@@ -146,6 +193,9 @@ export default function Funil() {
 
   useEffect(() => {
     fetchLeads();
+    base44.functions.invoke("trackSearch", { action: "check" })
+      .then(res => setUserPlanInfo(res.data))
+      .catch(() => {});
   }, []);
 
   const fetchLeads = async () => {
@@ -243,8 +293,13 @@ export default function Funil() {
     );
   }
 
+  const canViewSocials = ['pro_max', 'enterprise'].includes(userPlanInfo?.plan);
+
   return (
     <div className="p-6 h-full flex flex-col">
+      {showUpgrade && (
+        <UpgradeModal reason="Funcionalidad Premium: Mejora a Pro Max o Enterprise para acceder a Sitios Web e Instagram directamente." onClose={() => setShowUpgrade(false)} />
+      )}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-foreground mb-1">Mi Embudo CRM</h1>
         <p className="text-muted-foreground text-sm mb-5">Organiza y filtra tus prospectos</p>
@@ -320,7 +375,14 @@ export default function Funil() {
                         }`}
                       >
                         {visibleLeads.map((lead, i) => (
-                          <KanbanCard key={lead.id} lead={lead} index={i} onDelete={handleDeleteLead} />
+                          <KanbanCard 
+                            key={lead.id} 
+                            lead={lead} 
+                            index={i} 
+                            onDelete={handleDeleteLead}
+                            canViewSocials={canViewSocials}
+                            onUpgradeClick={() => setShowUpgrade(true)}
+                          />
                         ))}
                         {provided.placeholder}
                         

@@ -1,6 +1,6 @@
-import { MapPin, Phone, Star, Bookmark, CheckCircle, MessageCircle } from "lucide-react";
+import { MapPin, Phone, Star, Bookmark, CheckCircle, MessageCircle, Globe, Instagram, Lock } from "lucide-react";
 
-export default function LeadCard({ lead, onSave, saved }) {
+export default function LeadCard({ lead, onSave, saved, canViewSocials, onUpgradeClick }) {
   // Proteções contra dados mal formatados da API
   const safeRating = lead.rating ? Number(lead.rating) : null;
   const safePhone = lead.telefono ? String(lead.telefono) : "";
@@ -41,6 +41,50 @@ export default function LeadCard({ lead, onSave, saved }) {
           </a>
         </div>
       )}
+
+      <div className="flex items-center gap-2 mt-1">
+        {canViewSocials ? (
+          <>
+            {lead.website && (
+              <a
+                href={lead.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded-md transition-colors"
+                onClick={e => e.stopPropagation()}
+              >
+                <Globe className="w-3.5 h-3.5" /> Website
+              </a>
+            )}
+            <a
+              href={`https://www.instagram.com/explore/search/keyword/?q=${encodeURIComponent(lead.nombre_empresa)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-xs font-medium text-pink-600 hover:text-pink-700 bg-pink-50 hover:bg-pink-100 px-2 py-1 rounded-md transition-colors"
+              onClick={e => e.stopPropagation()}
+            >
+              <Instagram className="w-3.5 h-3.5" /> Instagram
+            </a>
+          </>
+        ) : (
+          <>
+            <button
+              onClick={(e) => { e.stopPropagation(); onUpgradeClick(); }}
+              className="flex items-center gap-1 text-xs font-medium text-muted-foreground bg-secondary hover:bg-secondary/80 px-2 py-1 rounded-md transition-colors"
+            >
+              <Globe className="w-3.5 h-3.5" />
+              <Lock className="w-3 h-3 ml-0.5" />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); onUpgradeClick(); }}
+              className="flex items-center gap-1 text-xs font-medium text-muted-foreground bg-secondary hover:bg-secondary/80 px-2 py-1 rounded-md transition-colors"
+            >
+              <Instagram className="w-3.5 h-3.5" />
+              <Lock className="w-3 h-3 ml-0.5" />
+            </button>
+          </>
+        )}
+      </div>
 
       <button
         onClick={() => onSave(lead)}
