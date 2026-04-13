@@ -304,7 +304,7 @@ export default function Landing() {
             <img
               src="https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&q=80"
               alt="Distribuidor de productos verificando el mapa de rutas logísticas"
-              loading="lazy"
+              fetchpriority="high"
               decoding="async"
               className="rounded-2xl shadow-2xl w-full object-cover h-72"
             />
