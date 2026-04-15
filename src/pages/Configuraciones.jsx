@@ -11,7 +11,7 @@ const PLANS = [
     period: "/mes",
     icon: Zap,
     color: "text-slate-500",
-    features: ["3 búsquedas/día", "Solo Latinoamérica", "5 resultados por búsqueda", "Embudo CRM básico"],
+    features: ["3 búsquedas/día", "Búsqueda Latam", "5 resultados por búsqueda", "Embudo CRM básico"],
     popular: false
   },
   {

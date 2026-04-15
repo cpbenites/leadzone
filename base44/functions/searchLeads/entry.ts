@@ -11,6 +11,8 @@ const PLAN_LIMITS = {
 function todayStr() { return new Date().toISOString().slice(0, 10); }
 function thisMonthStr() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; }
 
+const LATAM_COUNTRIES = ["Argentina", "Bolivia", "Brasil", "Brazil", "Chile", "Colombia", "Costa Rica", "Cuba", "República Dominicana", "Ecuador", "El Salvador", "Guatemala", "Honduras", "México", "Mexico", "Nicaragua", "Panamá", "Panama", "Paraguay", "Perú", "Peru", "Puerto Rico", "Uruguay", "Venezuela"];
+
 function getQueryVariations(nicho, ciudad, estado, pais) {
   const base = `${ciudad}, ${estado}, ${pais}`;
   if (!nicho || nicho.trim() === "") {
@@ -64,6 +66,13 @@ Deno.serve(async (req) => {
 
     const plan = userPlan.plan || 'free';
     const limits = PLAN_LIMITS[plan] || PLAN_LIMITS.free;
+
+    if (['free', 'starter'].includes(plan)) {
+      const isLatam = LATAM_COUNTRIES.some(c => pais.toLowerCase().includes(c.toLowerCase()));
+      if (!isLatam) {
+        return Response.json({ error: 'Tu plan actual solo permite buscar en países de Latinoamérica. Mejora al plan Pro para Búsqueda Global.', requiresUpgrade: true }, { status: 403 });
+      }
+    }
 
     if (!pageToken) {
       if (plan === 'free') {

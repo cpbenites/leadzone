@@ -143,7 +143,7 @@ export default function Dashboard() {
     let allCountries = Country.getAllCountries();
     const currentPlan = userPlanInfo?.plan || "free";
 
-    if (currentPlan === "free") {
+    if (currentPlan === "free" || currentPlan === "starter") {
       allCountries = allCountries.filter(c => LATAM_CODES.includes(c.isoCode));
     }
     
