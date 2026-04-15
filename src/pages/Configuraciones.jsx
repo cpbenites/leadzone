@@ -264,13 +264,16 @@ export default function Configuraciones() {
                   </ul>
 
                   <button
+                    disabled={currentPlan === plan.id}
                     className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                      plan.popular
+                      currentPlan === plan.id
+                        ? "bg-success/10 text-success border border-success/20 cursor-default"
+                        : plan.popular
                         ? "bg-primary text-primary-foreground hover:bg-primary/90"
                         : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
                     }`}
                   >
-                    Elegir Plan
+                    {currentPlan === plan.id ? "Tu Plan Actual" : "Elegir Plan"}
                   </button>
                 </div>
               );
