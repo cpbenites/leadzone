@@ -20,7 +20,7 @@ const PLANS = [
     period: "/mes",
     tag: null,
     description: "Para el vendedor independiente.",
-    features: ["120 búsquedas/mes", "Búsqueda Global (Mundial)", "Paginación completa", "Soporte por email"],
+    features: ["120 búsquedas/mes", "Búsqueda Latam", "Paginación completa", "Soporte por email"],
     cta: "Elegir Starter",
     highlight: false,
   },

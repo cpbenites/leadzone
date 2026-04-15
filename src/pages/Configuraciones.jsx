@@ -21,7 +21,7 @@ const PLANS = [
     period: "/mes",
     icon: Zap,
     color: "text-blue-500",
-    features: ["120 búsquedas/mes", "Búsqueda Global (Mundial)", "Paginación completa", "Soporte por email"],
+    features: ["120 búsquedas/mes", "Búsqueda Latam", "Paginación completa", "Soporte por email"],
     popular: false
   },
   {

@@ -9,7 +9,7 @@ const PLANS = [
     icon: Zap,
     color: "text-blue-500",
     bg: "bg-blue-50 border-blue-200",
-    features: ["120 búsquedas/mes", "Búsqueda Global (Mundial)", "Paginación completa", "Soporte por email"],
+    features: ["120 búsquedas/mes", "Búsqueda Latam", "Paginación completa", "Soporte por email"],
   },
   {
     id: "pro",
