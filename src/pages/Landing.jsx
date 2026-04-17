@@ -12,6 +12,7 @@ const PLANS = [
     features: ["3 búsquedas/día", "Búsqueda Latam", "5 resultados por búsqueda", "Embudo CRM básico"],
     cta: "Empezar Gratis",
     highlight: false,
+    link: null,
   },
   {
     id: "starter",
@@ -23,6 +24,7 @@ const PLANS = [
     features: ["120 búsquedas/mes", "Búsqueda Latam", "Paginación completa", "Soporte por email"],
     cta: "Elegir Starter",
     highlight: false,
+    link: "https://pay.hotmart.com/N105430971V?off=ga1w2f7m",
   },
   {
     id: "pro",
@@ -34,6 +36,7 @@ const PLANS = [
     features: ["300 búsquedas/mes", "Búsqueda Global (Mundial)", "CRM completo", "Soporte prioritario"],
     cta: "Elegir Pro",
     highlight: true,
+    link: "https://pay.hotmart.com/N105430971V?off=7plqhfor",
   },
   {
     id: "pro_max",
@@ -45,6 +48,7 @@ const PLANS = [
     features: ["800 búsquedas/mes", "Todo lo del Pro", "Exportar CSV", "Filtro de Calificación Estratégica (Encuentra negocios con malas notas)", "Enlaces directos a Web e Instagram"],
     cta: "Elegir Pro Max",
     highlight: false,
+    link: "https://pay.hotmart.com/N105430971V?off=4ziuiskw",
   },
   {
     id: "enterprise",
@@ -56,6 +60,7 @@ const PLANS = [
     features: ["1500+ búsquedas/mes", "Todo lo del Pro Max", "API access", "Soporte dedicado", "Filtro de Calificación Estratégica (Encuentra negocios con malas notas)", "Enlaces directos a Web e Instagram"],
     cta: "Elegir Enterprise",
     highlight: false,
+    link: "https://pay.hotmart.com/N105430971V?off=5ou2ljz4",
   },
 ];
 
@@ -382,7 +387,7 @@ export default function Landing() {
                 ))}
               </ul>
               <button
-                onClick={handleCTA}
+                onClick={() => plan.link ? window.open(plan.link, '_blank') : handleCTA()}
                 className={`w-full py-2.5 rounded-xl text-sm font-bold transition-all ${
                   plan.highlight
                     ? "bg-white text-indigo-600 hover:bg-indigo-50"

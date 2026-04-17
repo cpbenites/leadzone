@@ -12,7 +12,8 @@ const PLANS = [
     icon: Zap,
     color: "text-slate-500",
     features: ["3 búsquedas/día", "Búsqueda Latam", "5 resultados por búsqueda", "Embudo CRM básico"],
-    popular: false
+    popular: false,
+    link: null
   },
   {
     id: "starter",
@@ -22,7 +23,8 @@ const PLANS = [
     icon: Zap,
     color: "text-blue-500",
     features: ["120 búsquedas/mes", "Búsqueda Latam", "Paginación completa", "Soporte por email"],
-    popular: false
+    popular: false,
+    link: "https://pay.hotmart.com/N105430971V?off=ga1w2f7m"
   },
   {
     id: "pro",
@@ -32,7 +34,8 @@ const PLANS = [
     icon: Star,
     color: "text-purple-500",
     features: ["300 búsquedas/mes", "Búsqueda Global (Mundial)", "CRM completo", "Soporte prioritario"],
-    popular: true
+    popular: true,
+    link: "https://pay.hotmart.com/N105430971V?off=7plqhfor"
   },
   {
     id: "pro_max",
@@ -42,7 +45,8 @@ const PLANS = [
     icon: Star,
     color: "text-orange-500",
     features: ["800 búsquedas/mes", "Todo lo del Pro", "Exportar CSV", "Filtro de Calificación Estratégica (Encuentra negocios con malas notas)", "Enlaces directos a Web e Instagram"],
-    popular: false
+    popular: false,
+    link: "https://pay.hotmart.com/N105430971V?off=4ziuiskw"
   },
   {
     id: "enterprise",
@@ -52,7 +56,8 @@ const PLANS = [
     icon: Building2,
     color: "text-amber-500",
     features: ["1500+ búsquedas/mes", "Todo lo del Pro Max", "API access", "Soporte dedicado", "Filtro de Calificación Estratégica (Encuentra negocios con malas notas)", "Enlaces directos a Web e Instagram"],
-    popular: false
+    popular: false,
+    link: "https://pay.hotmart.com/N105430971V?off=5ou2ljz4"
   }
 ];
 
@@ -265,6 +270,7 @@ export default function Configuraciones() {
 
                   <button
                     disabled={currentPlan === plan.id}
+                    onClick={() => plan.link && window.open(plan.link, '_blank')}
                     className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all ${
                       currentPlan === plan.id
                         ? "bg-success/10 text-success border border-success/20 cursor-default"

@@ -10,6 +10,7 @@ const PLANS = [
     color: "text-blue-500",
     bg: "bg-blue-50 border-blue-200",
     features: ["120 búsquedas/mes", "Búsqueda Latam", "Paginación completa", "Soporte por email"],
+    link: "https://pay.hotmart.com/N105430971V?off=ga1w2f7m",
   },
   {
     id: "pro",
@@ -21,6 +22,7 @@ const PLANS = [
     bg: "bg-purple-50 border-purple-200",
     popular: true,
     features: ["300 búsquedas/mes", "Búsqueda Global (Mundial)", "CRM completo", "Soporte prioritario"],
+    link: "https://pay.hotmart.com/N105430971V?off=7plqhfor",
   },
   {
     id: "pro_max",
@@ -31,6 +33,7 @@ const PLANS = [
     color: "text-orange-500",
     bg: "bg-orange-50 border-orange-200",
     features: ["800 búsquedas/mes", "Todo lo del Pro", "Exportar CSV", "Filtro de Calificación Estratégica", "Enlaces directos a Web e Instagram"],
+    link: "https://pay.hotmart.com/N105430971V?off=4ziuiskw",
   },
   {
     id: "enterprise",
@@ -41,6 +44,7 @@ const PLANS = [
     color: "text-amber-600",
     bg: "bg-amber-50 border-amber-200",
     features: ["1500+ búsquedas/mes", "Todo lo del Pro Max", "API access", "Soporte dedicado", "Filtro de Calificación Estratégica", "Enlaces directos a Web e Instagram"],
+    link: "https://pay.hotmart.com/N105430971V?off=5ou2ljz4",
   },
 ];
 
@@ -91,7 +95,7 @@ export default function UpgradeModal({ onClose, reason }) {
                         ? "bg-primary text-primary-foreground hover:bg-primary/90"
                         : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
                     }`}
-                    onClick={() => alert(`Contacta al administrador para activar el plan ${plan.name}.`)}
+                    onClick={() => window.open(plan.link, '_blank')}
                   >
                     Elegir Plan
                   </button>
