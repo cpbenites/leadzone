@@ -22,6 +22,10 @@ import NichoSuggester from "../components/NichoSuggester";
 import UpgradeModal from "../components/UpgradeModal";
 import { useToast } from "@/components/ui/use-toast";
 
+const sendFbEvent = (event_name, custom_data = {}) => {
+  base44.functions.invoke("fbEvent", { event_name, custom_data }).catch(() => {});
+};
+
 const LATAM_CODES = ["AR", "BO", "BR", "CL", "CO", "CR", "CU", "DO", "EC", "SV", "GT", "HN", "MX", "NI", "PA", "PY", "PE", "PR", "UY", "VE"];
 
 function Combobox({ options, value, onChange, placeholder, disabled, emptyText }) {
@@ -132,11 +136,12 @@ export default function Dashboard() {
     setCiudad(name);
   };
 
-  // Load plan info on mount
+  // Load plan info on mount + PageView event
   useEffect(() => {
     base44.functions.invoke("trackSearch", { action: "check" })
       .then(res => setUserPlanInfo(res.data))
       .catch(() => {});
+    sendFbEvent("PageView");
   }, []);
 
   useEffect(() => {
@@ -188,6 +193,7 @@ export default function Dashboard() {
       setNextVariationIndex(null);
       setHasMore(false);
 
+      sendFbEvent("Search", { search_string: nicho || "geral", content_category: ciudad });
       const fetchedLeads = d.leads || [];
 
       if (userPlanInfo?.plan === "free" || !userPlanInfo) {
