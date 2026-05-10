@@ -168,12 +168,6 @@ export default function Landing() {
             </div>
             <span className="font-bold text-slate-900 text-lg">LeadZone</span>
           </div>
-          <Link
-            to="/blog"
-            className="text-sm text-slate-500 hover:text-slate-900 transition-colors hidden sm:block"
-          >
-            Blog
-          </Link>
           <button
             onClick={handleCTA}
             className="bg-primary text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-primary/90 transition-all"
