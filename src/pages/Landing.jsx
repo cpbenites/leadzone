@@ -1,4 +1,5 @@
 import { base44 } from "@/api/base44Client";
+import { Link } from "react-router-dom";
 import { MapPin, Clock, Route, Zap, ArrowRight, Check, Star } from "lucide-react";
 
 const PLANS = [
@@ -167,6 +168,12 @@ export default function Landing() {
             </div>
             <span className="font-bold text-slate-900 text-lg">LeadZone</span>
           </div>
+          <Link
+            to="/blog"
+            className="text-sm text-slate-500 hover:text-slate-900 transition-colors hidden sm:block"
+          >
+            Blog
+          </Link>
           <button
             onClick={handleCTA}
             className="bg-primary text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-primary/90 transition-all"
@@ -440,6 +447,10 @@ export default function Landing() {
             <Zap className="w-3 h-3 text-white" />
           </div>
           <span className="font-bold text-white text-sm">LeadZone</span>
+        </div>
+        <div className="flex items-center justify-center gap-5 mb-4">
+          <Link to="/blog" className="text-slate-500 hover:text-slate-300 text-xs transition-colors">Blog</Link>
+          <a href="#planes" className="text-slate-500 hover:text-slate-300 text-xs transition-colors">Precios</a>
         </div>
         <p className="text-slate-600 text-xs">© 2026 LeadZone. Todos los derechos reservados.</p>
       </footer>

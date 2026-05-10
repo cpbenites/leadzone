@@ -1,0 +1,65 @@
+{
+  "name": "BlogPost",
+  "type": "object",
+  "properties": {
+    "titulo": {
+      "type": "string",
+      "title": "T\u00edtulo"
+    },
+    "slug": {
+      "type": "string",
+      "title": "Slug (URL)"
+    },
+    "meta_description": {
+      "type": "string",
+      "title": "Meta Description (SEO)"
+    },
+    "categoria": {
+      "type": "string",
+      "title": "Categor\u00eda",
+      "enum": [
+        "prospeccion",
+        "ventas",
+        "crm",
+        "marketing",
+        "casos_de_uso",
+        "herramientas"
+      ],
+      "default": "prospeccion"
+    },
+    "contenido_html": {
+      "type": "string",
+      "title": "Contenido (HTML)"
+    },
+    "imagen_url": {
+      "type": "string",
+      "title": "Imagen destacada (URL)"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Tags SEO"
+    },
+    "publicado": {
+      "type": "boolean",
+      "title": "Publicado",
+      "default": false
+    },
+    "tiempo_lectura_min": {
+      "type": "number",
+      "title": "Tiempo de Lectura (min)"
+    },
+    "autor": {
+      "type": "string",
+      "title": "Autor",
+      "default": "Equipo LeadZone"
+    }
+  },
+  "required": [
+    "titulo",
+    "slug",
+    "contenido_html"
+  ]
+}
