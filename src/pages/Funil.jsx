@@ -5,7 +5,7 @@ import { Phone, MapPin, Star, MessageCircle, Loader2, Trash2, Copy, Check, Searc
 import { useToast } from "@/components/ui/use-toast";
 import UpgradeModal from "../components/UpgradeModal";
 import { useLang } from "@/lib/i18n";
-import { APP_T } from "@/lib/translations/app";
+import { T } from "@/lib/translations";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,10 +18,10 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const COLUMNS = [
-  { id: "nuevos_leads", label: "Nuevos Leads", color: "bg-blue-500", light: "bg-blue-50 border-blue-100" },
-  { id: "en_contacto", label: "En Contacto", color: "bg-amber-500", light: "bg-amber-50 border-amber-100" },
-  { id: "en_negociacion", label: "En Negociación", color: "bg-purple-500", light: "bg-purple-50 border-purple-100" },
-  { id: "cliente_cerrado", label: "Cliente Cerrado", color: "bg-green-500", light: "bg-green-50 border-green-100" },
+  { id: "nuevos_leads", color: "bg-blue-500", light: "bg-blue-50 border-blue-100" },
+  { id: "en_contacto", color: "bg-amber-500", light: "bg-amber-50 border-amber-100" },
+  { id: "en_negociacion", color: "bg-purple-500", light: "bg-purple-50 border-purple-100" },
+  { id: "cliente_cerrado", color: "bg-green-500", light: "bg-green-50 border-green-100" },
 ];
 
 const LEADS_PER_PAGE = 10;
@@ -30,7 +30,7 @@ function KanbanCard({ lead, index, onDelete, canViewSocials, onUpgradeClick }) {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const { lang } = useLang();
-  const t = (APP_T[lang] || APP_T.es).funil;
+  const t = T[lang].funil;
 
   const whatsapp = lead.telefono
     ? `https://wa.me/${lead.telefono.replace(/\D/g, "")}`
@@ -42,7 +42,7 @@ function KanbanCard({ lead, index, onDelete, canViewSocials, onUpgradeClick }) {
     e.stopPropagation();
     navigator.clipboard.writeText(lead.nombre_empresa);
     setCopied(true);
-    const { dismiss } = toast({ title: t.copied, description: t.copiedDesc });
+    const { dismiss } = toast({ title: t.copiedTitle, description: t.copiedDesc });
     setTimeout(() => { setCopied(false); dismiss(); }, 2500);
   };
 
@@ -64,14 +64,14 @@ function KanbanCard({ lead, index, onDelete, canViewSocials, onUpgradeClick }) {
               <button 
                 onClick={handleCopy} 
                 className="p-1 hover:bg-slate-100 rounded text-muted-foreground hover:text-foreground transition-colors"
-                title={t.copyTitle}
+                title={t.copyName}
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
               </button>
               <button 
                 onClick={(e) => { e.stopPropagation(); onDelete(lead.id); }} 
                 className="p-1 hover:bg-red-50 rounded text-muted-foreground hover:text-red-500 transition-colors"
-                title={t.removeTitle}
+                title={t.removeLead}
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -177,7 +177,7 @@ function KanbanCard({ lead, index, onDelete, canViewSocials, onUpgradeClick }) {
 export default function Funil() {
   const { toast } = useToast();
   const { lang } = useLang();
-  const t = (APP_T[lang] || APP_T.es).funil;
+  const t = T[lang].funil;
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [leadToDelete, setLeadToDelete] = useState(null);
@@ -220,7 +220,7 @@ export default function Funil() {
       
       setLeads(sortedData);
     } catch (e) {
-      toast({ title: t.loadErrorTitle, description: e.message, variant: "destructive" });
+      toast({ title: t.loadError, description: e.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -235,9 +235,9 @@ export default function Funil() {
     try {
       await base44.entities.SavedLead.delete(leadToDelete);
       setLeads(prev => prev.filter(l => l.id !== leadToDelete));
-      toast({ title: t.deleted });
+      toast({ title: t.deletedToast });
     } catch (e) {
-      toast({ title: t.deleteErrorTitle, description: e.message, variant: "destructive" });
+      toast({ title: t.deleteError, description: e.message, variant: "destructive" });
     } finally {
       setLeadToDelete(null);
     }
@@ -253,7 +253,7 @@ export default function Funil() {
     try {
       await base44.entities.SavedLead.update(draggableId, { status_funil: newStatus });
     } catch (e) {
-      toast({ title: t.moveErrorTitle, description: e.message, variant: "destructive" });
+      toast({ title: t.moveError, description: e.message, variant: "destructive" });
       fetchLeads();
     }
   };
@@ -304,7 +304,7 @@ export default function Funil() {
   return (
     <div className="p-6 h-full flex flex-col">
       {showUpgrade && (
-        <UpgradeModal reason={t.socialsUpgrade} onClose={() => setShowUpgrade(false)} />
+        <UpgradeModal reason={t.upgradeReason} onClose={() => setShowUpgrade(false)} />
       )}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-foreground mb-1">{t.title}</h1>
@@ -316,7 +316,7 @@ export default function Funil() {
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
-              placeholder={t.searchPh}
+              placeholder={t.searchPlaceholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-3 py-2 text-sm bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
@@ -336,7 +336,7 @@ export default function Funil() {
               onChange={(e) => setFilterStatus(e.target.value)}
               className="px-3 py-2 text-sm bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary min-w-[150px]"
             >
-              <option value="">{t.allStatuses}</option>
+              <option value="">{t.allStages}</option>
               {COLUMNS.map(c => <option key={c.id} value={c.id}>{t.columns[c.id]}</option>)}
             </select>
             {(searchQuery || filterPais || filterStatus) && (
@@ -404,7 +404,7 @@ export default function Funil() {
                             className="w-full py-2.5 mt-3 flex items-center justify-center gap-1.5 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors border border-primary/10"
                           >
                             <Plus className="w-3.5 h-3.5" />
-                            {t.loadMore(colLeads.length - visibleCounts[col.id])}
+                            {t.loadMore} ({colLeads.length - visibleCounts[col.id]})
                           </button>
                         )}
                       </div>
@@ -420,15 +420,15 @@ export default function Funil() {
       <AlertDialog open={!!leadToDelete} onOpenChange={(open) => !open && setLeadToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t.deleteTitle}</AlertDialogTitle>
+            <AlertDialogTitle>{t.dialogTitle}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t.deleteDesc}
+              {t.dialogDesc}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t.keep}</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} className="bg-red-500 hover:bg-red-600 focus:ring-red-500 text-white">
-              {t.confirmDelete}
+              {t.confirmRemove}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

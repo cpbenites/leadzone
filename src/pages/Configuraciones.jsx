@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { User, CreditCard, Shield, Check, Zap, Star, Building2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useLang } from "@/lib/i18n";
-import { APP_T } from "@/lib/translations/app";
+import { T } from "@/lib/translations";
 
 const PLANS = [
   {
@@ -82,8 +82,8 @@ const PLAN_LABELS = {
 export default function Configuraciones() {
   const { toast } = useToast();
   const { lang } = useLang();
-  const t = (APP_T[lang] || APP_T.es).config;
-  const planFeatures = (APP_T[lang] || APP_T.es).planFeatures;
+  const tAll = T[lang];
+  const t = tAll.config;
   const [user, setUser] = useState(null);
   const [displayName, setDisplayName] = useState("");
   const [saving, setSaving] = useState(false);
@@ -112,7 +112,7 @@ export default function Configuraciones() {
     setSaving(true);
     try {
       await base44.auth.updateMe({ full_name: displayName });
-      toast({ title: t.updatedTitle, description: t.updatedDesc });
+      toast({ title: t.savedTitle, description: t.savedDesc });
     } catch (e) {
       toast({ title: t.errorTitle, description: e.message, variant: "destructive" });
     } finally {
@@ -172,7 +172,7 @@ export default function Configuraciones() {
               {user?.full_name?.[0]?.toUpperCase() || "U"}
             </div>
             <div>
-              <p className="font-semibold text-foreground">{user?.full_name || t.userFallback}</p>
+              <p className="font-semibold text-foreground">{user?.full_name || t.defaultUser}</p>
               <p className="text-sm text-muted-foreground">{user?.email}</p>
               <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full mt-1 inline-block font-medium">
                 {user?.role === "admin" ? t.roleAdmin : t.roleUser}
@@ -190,7 +190,7 @@ export default function Configuraciones() {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t.email}</label>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Email</label>
               <input
                 value={user?.email || ""}
                 disabled
@@ -213,7 +213,7 @@ export default function Configuraciones() {
               <h3 className="text-sm font-semibold text-foreground mb-4">{t.consumption}</h3>
               <div className="flex justify-between items-end mb-2">
                 <span className={`text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wider ${isFree ? 'bg-slate-100 text-slate-600' : 'bg-primary/10 text-primary'}`}>
-                  {t.planLabel(t.planNames[currentPlan] || currentPlan)}
+                  {t.planWord} {PLAN_LABELS[currentPlan]}
                 </span>
                 <p className="text-sm font-bold text-foreground">
                   <span className="text-xl">{searchesDone}</span> / {planDetails.limit}
@@ -261,11 +261,11 @@ export default function Configuraciones() {
                   <h3 className="text-lg font-bold text-foreground">{plan.name}</h3>
                   <div className="flex items-baseline gap-1 mt-1 mb-4">
                     <span className="text-3xl font-extrabold text-foreground">{plan.price}</span>
-                    <span className="text-muted-foreground text-sm">{t.perMonth}</span>
+                    <span className="text-muted-foreground text-sm">{tAll.perMonth}</span>
                   </div>
 
                   <ul className="space-y-2 flex-1 mb-6">
-                    {(planFeatures[plan.id] || plan.features).map((f, i) => (
+                    {(tAll.planFeatures[plan.id] || plan.features).map((f, i) => (
                       <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Check className="w-4 h-4 text-success shrink-0" />
                         {f}
@@ -301,7 +301,7 @@ export default function Configuraciones() {
           <div className="flex items-center gap-3 p-4 bg-success/10 border border-success/20 rounded-xl">
             <Shield className="w-5 h-5 text-success" />
             <div>
-              <p className="text-sm font-semibold text-foreground">{t.protectedTitle}</p>
+              <p className="text-sm font-semibold text-foreground">{t.protected}</p>
               <p className="text-xs text-muted-foreground">{t.protectedDesc}</p>
             </div>
           </div>

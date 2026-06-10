@@ -22,7 +22,7 @@ import NichoSuggester from "../components/NichoSuggester";
 import UpgradeModal from "../components/UpgradeModal";
 import { useToast } from "@/components/ui/use-toast";
 import { useLang } from "@/lib/i18n";
-import { APP_T } from "@/lib/translations/app";
+import { T } from "@/lib/translations";
 
 const sendFbEvent = (event_name, custom_data = {}) => {
   base44.functions.invoke("fbEvent", { event_name, custom_data }).catch(() => {});
@@ -86,7 +86,7 @@ function Combobox({ options, value, onChange, placeholder, disabled, emptyText }
 export default function Dashboard() {
   const { toast } = useToast();
   const { lang } = useLang();
-  const t = (APP_T[lang] || APP_T.es).dashboard;
+  const t = T[lang].dashboard;
   const [pais, setPais] = useState("");
   const [estado, setEstado] = useState("");
   const [ciudad, setCiudad] = useState("");
@@ -210,7 +210,7 @@ export default function Dashboard() {
         setHasMore(d.hasMore || false);
       }
     } catch (e) {
-      const errorMessage = e.response?.data?.error || e.message || t.errorGeneric;
+      const errorMessage = e.response?.data?.error || e.message || "Error al buscar leads.";
       if (errorMessage.includes("Límite") || errorMessage.includes("dispositivo") || e.response?.status === 403) {
         setUpgradeReason(errorMessage);
         setShowUpgrade(true);
@@ -224,7 +224,7 @@ export default function Dashboard() {
 
   const handleLoadMore = async () => {
     if (isFree) {
-      setUpgradeReason(t.loadMoreUpgrade);
+      setUpgradeReason(t.upgradeLoadMore);
       setShowUpgrade(true);
       return;
     }
@@ -279,7 +279,7 @@ export default function Dashboard() {
         user_email: currentUser.email // Associar o lead ao dono
       });
       setSavedIds(prev => new Set([...prev, lead.place_id || lead.nombre_empresa]));
-      toast({ title: t.savedTitle, description: t.savedDesc });
+      toast({ title: t.successTitle, description: t.savedDesc });
     } catch (e) {
       toast({ title: t.saveErrorTitle, description: e.message, variant: "destructive" });
     }
@@ -300,14 +300,14 @@ export default function Dashboard() {
         {/* Plan badge */}
         {userPlanInfo && (
           <div className="flex items-center gap-2 bg-card border border-border rounded-xl px-4 py-2 text-xs">
-            <span className="font-semibold text-foreground capitalize">{userPlanInfo.plan === "free" ? t.planFree : `${t.planPrefix} ${userPlanInfo.plan}`}</span>
+            <span className="font-semibold text-foreground capitalize">{userPlanInfo.plan === "free" ? t.freePlanLabel : `${t.planLabel} ${userPlanInfo.plan}`}</span>
             {userPlanInfo.plan === "free" ? (
             <span className="text-muted-foreground">
-              {t.remainingToday(3 - (userPlanInfo.searches_today || 0))}
+              {3 - (userPlanInfo.searches_today || 0)} {t.remainingToday}
               </span>
             ) : (
               <span className="text-muted-foreground">
-                {t.monthlyUsage(userPlanInfo.searches_this_month || 0, userPlanInfo.monthly_limit)}
+                {userPlanInfo.searches_this_month || 0}/{userPlanInfo.monthly_limit} {t.searchesMonth}
               </span>
             )}
             <button
@@ -332,7 +332,7 @@ export default function Dashboard() {
               value={selectedCountryCode}
               onChange={handlePaisChange}
               placeholder={t.selectCountry}
-              emptyText={t.emptyCountry}
+              emptyText={t.countryNotFound}
             />
           </div>
 
@@ -344,7 +344,7 @@ export default function Dashboard() {
               value={selectedStateCode}
               onChange={handleEstadoChange}
               placeholder={t.selectState}
-              emptyText={t.emptyState}
+              emptyText={t.stateNotFound}
             />
           </div>
 
@@ -356,7 +356,7 @@ export default function Dashboard() {
               value={ciudad}
               onChange={handleCiudadChange}
               placeholder={t.selectCity}
-              emptyText={t.emptyCity}
+              emptyText={t.cityNotFound}
             />
           </div>
 
@@ -366,7 +366,7 @@ export default function Dashboard() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input type="text" value={nicho} onChange={e => setNicho(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && handleSearch()}
-                placeholder={t.nichePh}
+                placeholder={t.nichePlaceholder}
                 className="w-full bg-background border border-input rounded-lg pl-9 pr-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground" />
             </div>
           </div>
@@ -396,7 +396,7 @@ export default function Dashboard() {
         {ciudad && (
           <div className="mb-4 flex items-center gap-2 text-xs text-muted-foreground">
             <MapPin className="w-3.5 h-3.5 text-primary" />
-            <span>{t.searchingLabel} <strong className="text-foreground">{t.searchPreview(nicho, ciudad, estado, pais)}</strong></span>
+            <span>{t.searching} <strong className="text-foreground">{nicho ? `"${nicho} ${t.in} ${ciudad}, ${estado}, ${pais}"` : `"${t.companiesIn} ${ciudad}, ${estado}, ${pais}"`}</strong></span>
           </div>
         )}
 
@@ -419,8 +419,8 @@ export default function Dashboard() {
       {!loading && searched && leads.length === 0 && !error && (
         <div className="text-center py-16 text-muted-foreground">
           <Building2 className="w-12 h-12 mx-auto mb-3 opacity-30" />
-          <p className="font-medium">{t.noResults}</p>
-          <p className="text-sm mt-1">{t.tryOther}</p>
+          <p className="font-medium">{t.emptyTitle}</p>
+          <p className="text-sm mt-1">{t.emptyDesc}</p>
         </div>
       )}
 
@@ -428,7 +428,7 @@ export default function Dashboard() {
       {leads.length > 0 && (
         <>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-foreground">{t.foundCount(leads.length)}</h2>
+            <h2 className="text-sm font-semibold text-foreground">{leads.length} {t.found}</h2>
             <span className="text-xs text-muted-foreground">{ciudad}, {estado}</span>
           </div>
 
@@ -440,7 +440,7 @@ export default function Dashboard() {
                 onSave={handleSave}
                 saved={savedIds.has(lead.place_id || lead.nombre_empresa)}
                 canViewSocials={userPlanInfo?.plan === 'pro_max' || userPlanInfo?.plan === 'enterprise'}
-                onUpgradeClick={() => { setUpgradeReason(t.socialsUpgrade); setShowUpgrade(true); }}
+                onUpgradeClick={() => { setUpgradeReason(t.upgradeSocials); setShowUpgrade(true); }}
               />
             ))}
           </div>
@@ -461,10 +461,10 @@ export default function Dashboard() {
                 {isFree ? t.loadMoreLocked : loadingMore ? t.loadingMore : t.loadMore}
               </button>
               {isFree && (
-                <p className="text-xs text-muted-foreground">{t.freeLimitNote}</p>
+                <p className="text-xs text-muted-foreground">{t.freeNote}</p>
               )}
               {!isFree && (
-                <p className="text-xs text-muted-foreground">{t.searchingMore(ciudad)}</p>
+                <p className="text-xs text-muted-foreground">{t.searchingMoreIn} {ciudad}</p>
               )}
             </div>
           )}
