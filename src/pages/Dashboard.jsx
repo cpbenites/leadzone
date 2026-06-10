@@ -21,6 +21,8 @@ import LeadCard from "../components/LeadCard";
 import NichoSuggester from "../components/NichoSuggester";
 import UpgradeModal from "../components/UpgradeModal";
 import { useToast } from "@/components/ui/use-toast";
+import { useLang } from "@/lib/i18n";
+import { APP_T } from "@/lib/translations/app";
 
 const sendFbEvent = (event_name, custom_data = {}) => {
   base44.functions.invoke("fbEvent", { event_name, custom_data }).catch(() => {});
@@ -83,6 +85,8 @@ function Combobox({ options, value, onChange, placeholder, disabled, emptyText }
 
 export default function Dashboard() {
   const { toast } = useToast();
+  const { lang } = useLang();
+  const t = (APP_T[lang] || APP_T.es).dashboard;
   const [pais, setPais] = useState("");
   const [estado, setEstado] = useState("");
   const [ciudad, setCiudad] = useState("");
@@ -160,7 +164,7 @@ export default function Dashboard() {
 
   const handleSearch = async () => {
     if (!pais || !estado || !ciudad) {
-      toast({ title: "Campos incompletos", description: "Selecciona País, Estado y Ciudad.", variant: "destructive" });
+      toast({ title: t.incompleteTitle, description: t.incompleteDesc, variant: "destructive" });
       return;
     }
 
@@ -206,7 +210,7 @@ export default function Dashboard() {
         setHasMore(d.hasMore || false);
       }
     } catch (e) {
-      const errorMessage = e.response?.data?.error || e.message || "Error al buscar leads.";
+      const errorMessage = e.response?.data?.error || e.message || t.errorGeneric;
       if (errorMessage.includes("Límite") || errorMessage.includes("dispositivo") || e.response?.status === 403) {
         setUpgradeReason(errorMessage);
         setShowUpgrade(true);
@@ -220,7 +224,7 @@ export default function Dashboard() {
 
   const handleLoadMore = async () => {
     if (isFree) {
-      setUpgradeReason("O botão 'Carregar Mais' está disponível apenas nos planos pagos.");
+      setUpgradeReason(t.loadMoreUpgrade);
       setShowUpgrade(true);
       return;
     }
@@ -243,7 +247,7 @@ export default function Dashboard() {
       setNextVariationIndex(d.nextVariationIndex ?? null);
       setHasMore(d.hasMore || false);
     } catch (e) {
-      toast({ title: "Error al cargar más leads", description: e.message, variant: "destructive" });
+      toast({ title: t.loadMoreError, description: e.message, variant: "destructive" });
     } finally {
       setLoadingMore(false);
     }
@@ -255,7 +259,7 @@ export default function Dashboard() {
       const currentUser = await base44.auth.me();
       
       if (!currentUser) {
-        toast({ title: "Error", description: "Debes iniciar sesión para guardar leads.", variant: "destructive" });
+        toast({ title: t.errorTitle, description: t.loginRequired, variant: "destructive" });
         return;
       }
 
@@ -275,9 +279,9 @@ export default function Dashboard() {
         user_email: currentUser.email // Associar o lead ao dono
       });
       setSavedIds(prev => new Set([...prev, lead.place_id || lead.nombre_empresa]));
-      toast({ title: "Éxito", description: "Lead guardado en tu embudo." });
+      toast({ title: t.savedTitle, description: t.savedDesc });
     } catch (e) {
-      toast({ title: "Error al guardar", description: e.message, variant: "destructive" });
+      toast({ title: t.saveErrorTitle, description: e.message, variant: "destructive" });
     }
   };
 
@@ -289,28 +293,28 @@ export default function Dashboard() {
 
       <div className="mb-8 flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Dashboard de Prospección</h1>
-          <p className="text-muted-foreground mt-1 text-sm">Encuentra clientes potenciales en tu ciudad objetivo</p>
+          <h1 className="text-2xl font-bold text-foreground">{t.title}</h1>
+          <p className="text-muted-foreground mt-1 text-sm">{t.subtitle}</p>
         </div>
 
         {/* Plan badge */}
         {userPlanInfo && (
           <div className="flex items-center gap-2 bg-card border border-border rounded-xl px-4 py-2 text-xs">
-            <span className="font-semibold text-foreground capitalize">{userPlanInfo.plan === "free" ? "Plan Gratuito" : `Plan ${userPlanInfo.plan}`}</span>
+            <span className="font-semibold text-foreground capitalize">{userPlanInfo.plan === "free" ? t.planFree : `${t.planPrefix} ${userPlanInfo.plan}`}</span>
             {userPlanInfo.plan === "free" ? (
             <span className="text-muted-foreground">
-              {3 - (userPlanInfo.searches_today || 0)} búsquedas restantes hoy
+              {t.remainingToday(3 - (userPlanInfo.searches_today || 0))}
               </span>
             ) : (
               <span className="text-muted-foreground">
-                {userPlanInfo.searches_this_month || 0}/{userPlanInfo.monthly_limit} búsquedas este mes
+                {t.monthlyUsage(userPlanInfo.searches_this_month || 0, userPlanInfo.monthly_limit)}
               </span>
             )}
             <button
               onClick={() => { setUpgradeReason(""); setShowUpgrade(true); }}
               className="ml-1 text-primary font-semibold hover:underline"
             >
-              Mejorar Plan
+              {t.upgradeBtn}
             </button>
           </div>
         )}
@@ -322,63 +326,63 @@ export default function Dashboard() {
       <div className="bg-card border border-border rounded-2xl p-6 mb-8 shadow-sm">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">País</label>
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t.country}</label>
             <Combobox
               options={availableCountries.map(p => ({ label: p.name, value: p.isoCode }))}
               value={selectedCountryCode}
               onChange={handlePaisChange}
-              placeholder="Seleccionar país..."
-              emptyText="País no encontrado."
+              placeholder={t.selectCountry}
+              emptyText={t.emptyCountry}
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Estado / Provincia</label>
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t.state}</label>
             <Combobox
               disabled={!selectedCountryCode}
               options={availableStates.map(e => ({ label: e.name, value: e.isoCode }))}
               value={selectedStateCode}
               onChange={handleEstadoChange}
-              placeholder="Seleccionar estado..."
-              emptyText="Estado no encontrado."
+              placeholder={t.selectState}
+              emptyText={t.emptyState}
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Ciudad</label>
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t.city}</label>
             <Combobox
               disabled={!selectedStateCode}
               options={availableCities.map(c => ({ label: c.name, value: c.name }))}
               value={ciudad}
               onChange={handleCiudadChange}
-              placeholder="Seleccionar ciudad..."
-              emptyText="Ciudad no encontrada."
+              placeholder={t.selectCity}
+              emptyText={t.emptyCity}
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Nicho / Segmento</label>
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t.niche}</label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input type="text" value={nicho} onChange={e => setNicho(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && handleSearch()}
-                placeholder="Ej: restaurantes, clínicas..."
+                placeholder={t.nichePh}
                 className="w-full bg-background border border-input rounded-lg pl-9 pr-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground" />
             </div>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Reputación</label>
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t.reputation}</label>
             <div className="relative">
               <select 
                 value={ratingFilter} 
                 onChange={e => setRatingFilter(e.target.value)} 
                 disabled={!canUseRatingFilter}
                 className="w-full appearance-none bg-background border border-input rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring pr-8 disabled:opacity-40 disabled:cursor-not-allowed">
-                <option value="all">Todas las Notas</option>
-                <option value="help">Necesitan Ayuda (⭐ &lt; 4.0)</option>
-                <option value="growth">En Crecimiento (⭐ 4.0 - 4.5)</option>
-                <option value="elite">Elite (⭐ &gt; 4.5)</option>
+                <option value="all">{t.ratingAll}</option>
+                <option value="help">{t.ratingHelp}</option>
+                <option value="growth">{t.ratingGrowth}</option>
+                <option value="elite">{t.ratingElite}</option>
               </select>
               {!canUseRatingFilter ? (
                 <Lock className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
@@ -392,14 +396,14 @@ export default function Dashboard() {
         {ciudad && (
           <div className="mb-4 flex items-center gap-2 text-xs text-muted-foreground">
             <MapPin className="w-3.5 h-3.5 text-primary" />
-            <span>Buscando: <strong className="text-foreground">{nicho ? `"${nicho} en ${ciudad}, ${estado}, ${pais}"` : `"Empresas en ${ciudad}, ${estado}, ${pais}"`}</strong></span>
+            <span>{t.searchingLabel} <strong className="text-foreground">{t.searchPreview(nicho, ciudad, estado, pais)}</strong></span>
           </div>
         )}
 
         <button onClick={handleSearch} disabled={loading}
           className="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-primary/90 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed shadow-sm">
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-          {loading ? "Buscando leads..." : "Buscar Leads en la Ciudad"}
+          {loading ? t.searchingBtn : t.searchBtn}
         </button>
       </div>
 
@@ -415,8 +419,8 @@ export default function Dashboard() {
       {!loading && searched && leads.length === 0 && !error && (
         <div className="text-center py-16 text-muted-foreground">
           <Building2 className="w-12 h-12 mx-auto mb-3 opacity-30" />
-          <p className="font-medium">No se encontraron resultados</p>
-          <p className="text-sm mt-1">Intenta con otro nicho o ciudad</p>
+          <p className="font-medium">{t.noResults}</p>
+          <p className="text-sm mt-1">{t.tryOther}</p>
         </div>
       )}
 
@@ -424,7 +428,7 @@ export default function Dashboard() {
       {leads.length > 0 && (
         <>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-foreground">{leads.length} establecimientos encontrados</h2>
+            <h2 className="text-sm font-semibold text-foreground">{t.foundCount(leads.length)}</h2>
             <span className="text-xs text-muted-foreground">{ciudad}, {estado}</span>
           </div>
 
@@ -436,7 +440,7 @@ export default function Dashboard() {
                 onSave={handleSave}
                 saved={savedIds.has(lead.place_id || lead.nombre_empresa)}
                 canViewSocials={userPlanInfo?.plan === 'pro_max' || userPlanInfo?.plan === 'enterprise'}
-                onUpgradeClick={() => { setUpgradeReason("Funcionalidad Premium: Mejora a Pro Max o Enterprise para acceder a Sitios Web e Instagram directamente."); setShowUpgrade(true); }}
+                onUpgradeClick={() => { setUpgradeReason(t.socialsUpgrade); setShowUpgrade(true); }}
               />
             ))}
           </div>
@@ -454,13 +458,13 @@ export default function Dashboard() {
                 }`}
               >
                 {isFree ? <Lock className="w-4 h-4" /> : loadingMore ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                {isFree ? "Cargar Más — Mejora tu Plan" : loadingMore ? "Cargando más leads..." : "Cargar Más Leads"}
+                {isFree ? t.loadMoreLocked : loadingMore ? t.loadingMore : t.loadMore}
               </button>
               {isFree && (
-                <p className="text-xs text-muted-foreground">Plan gratuito: solo 5 resultados por búsqueda</p>
+                <p className="text-xs text-muted-foreground">{t.freeLimitNote}</p>
               )}
               {!isFree && (
-                <p className="text-xs text-muted-foreground">Buscando más establecimientos en {ciudad}</p>
+                <p className="text-xs text-muted-foreground">{t.searchingMore(ciudad)}</p>
               )}
             </div>
           )}

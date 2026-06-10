@@ -4,6 +4,8 @@ import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { Phone, MapPin, Star, MessageCircle, Loader2, Trash2, Copy, Check, Search, X, Plus, Globe, Instagram, Lock } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import UpgradeModal from "../components/UpgradeModal";
+import { useLang } from "@/lib/i18n";
+import { APP_T } from "@/lib/translations/app";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +29,8 @@ const LEADS_PER_PAGE = 10;
 function KanbanCard({ lead, index, onDelete, canViewSocials, onUpgradeClick }) {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
+  const { lang } = useLang();
+  const t = (APP_T[lang] || APP_T.es).funil;
 
   const whatsapp = lead.telefono
     ? `https://wa.me/${lead.telefono.replace(/\D/g, "")}`
@@ -38,7 +42,7 @@ function KanbanCard({ lead, index, onDelete, canViewSocials, onUpgradeClick }) {
     e.stopPropagation();
     navigator.clipboard.writeText(lead.nombre_empresa);
     setCopied(true);
-    const { dismiss } = toast({ title: "Copiado", description: "Nombre de la empresa copiado." });
+    const { dismiss } = toast({ title: t.copied, description: t.copiedDesc });
     setTimeout(() => { setCopied(false); dismiss(); }, 2500);
   };
 
@@ -60,14 +64,14 @@ function KanbanCard({ lead, index, onDelete, canViewSocials, onUpgradeClick }) {
               <button 
                 onClick={handleCopy} 
                 className="p-1 hover:bg-slate-100 rounded text-muted-foreground hover:text-foreground transition-colors"
-                title="Copiar nombre"
+                title={t.copyTitle}
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
               </button>
               <button 
                 onClick={(e) => { e.stopPropagation(); onDelete(lead.id); }} 
                 className="p-1 hover:bg-red-50 rounded text-muted-foreground hover:text-red-500 transition-colors"
-                title="Quitar lead"
+                title={t.removeTitle}
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -89,7 +93,7 @@ function KanbanCard({ lead, index, onDelete, canViewSocials, onUpgradeClick }) {
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
                 className="text-xs text-muted-foreground leading-tight hover:text-primary hover:underline cursor-pointer"
-                title="Ver perfil en Google Maps"
+                title={t.mapsTitle}
               >
                 {lead.direccion || `${lead.ciudad}, ${lead.estado}`}
               </a>
@@ -161,7 +165,7 @@ function KanbanCard({ lead, index, onDelete, canViewSocials, onUpgradeClick }) {
               className="flex items-center justify-center gap-1.5 w-full py-1.5 rounded-lg bg-green-500/10 text-green-600 border border-green-500/20 text-xs font-bold hover:bg-green-500 hover:text-white transition-all"
             >
               <MessageCircle className="w-3.5 h-3.5" />
-              Llamar por WhatsApp
+              {t.whatsappCall}
             </a>
           )}
         </div>
@@ -172,6 +176,8 @@ function KanbanCard({ lead, index, onDelete, canViewSocials, onUpgradeClick }) {
 
 export default function Funil() {
   const { toast } = useToast();
+  const { lang } = useLang();
+  const t = (APP_T[lang] || APP_T.es).funil;
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [leadToDelete, setLeadToDelete] = useState(null);
@@ -214,7 +220,7 @@ export default function Funil() {
       
       setLeads(sortedData);
     } catch (e) {
-      toast({ title: "Error al cargar", description: e.message, variant: "destructive" });
+      toast({ title: t.loadErrorTitle, description: e.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -229,9 +235,9 @@ export default function Funil() {
     try {
       await base44.entities.SavedLead.delete(leadToDelete);
       setLeads(prev => prev.filter(l => l.id !== leadToDelete));
-      toast({ title: "Lead eliminado correctamente." });
+      toast({ title: t.deleted });
     } catch (e) {
-      toast({ title: "Error al eliminar", description: e.message, variant: "destructive" });
+      toast({ title: t.deleteErrorTitle, description: e.message, variant: "destructive" });
     } finally {
       setLeadToDelete(null);
     }
@@ -247,7 +253,7 @@ export default function Funil() {
     try {
       await base44.entities.SavedLead.update(draggableId, { status_funil: newStatus });
     } catch (e) {
-      toast({ title: "Error al mover lead", description: e.message, variant: "destructive" });
+      toast({ title: t.moveErrorTitle, description: e.message, variant: "destructive" });
       fetchLeads();
     }
   };
@@ -298,11 +304,11 @@ export default function Funil() {
   return (
     <div className="p-6 h-full flex flex-col">
       {showUpgrade && (
-        <UpgradeModal reason="Funcionalidad Premium: Mejora a Pro Max o Enterprise para acceder a Sitios Web e Instagram directamente." onClose={() => setShowUpgrade(false)} />
+        <UpgradeModal reason={t.socialsUpgrade} onClose={() => setShowUpgrade(false)} />
       )}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground mb-1">Mi Embudo CRM</h1>
-        <p className="text-muted-foreground text-sm mb-5">Organiza y filtra tus prospectos</p>
+        <h1 className="text-2xl font-bold text-foreground mb-1">{t.title}</h1>
+        <p className="text-muted-foreground text-sm mb-5">{t.subtitle}</p>
 
         {/* Filtros Inteligentes */}
         <div className="flex flex-col md:flex-row gap-3 bg-card p-3 rounded-xl border border-border shadow-sm">
@@ -310,7 +316,7 @@ export default function Funil() {
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Buscar por empresa, ciudad o país..."
+              placeholder={t.searchPh}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-3 py-2 text-sm bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
@@ -322,7 +328,7 @@ export default function Funil() {
               onChange={(e) => setFilterPais(e.target.value)}
               className="px-3 py-2 text-sm bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary min-w-[140px]"
             >
-              <option value="">Todos los Países</option>
+              <option value="">{t.allCountries}</option>
               {uniqueCountries.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
             <select
@@ -330,15 +336,15 @@ export default function Funil() {
               onChange={(e) => setFilterStatus(e.target.value)}
               className="px-3 py-2 text-sm bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary min-w-[150px]"
             >
-              <option value="">Todos los Estados</option>
-              {COLUMNS.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+              <option value="">{t.allStatuses}</option>
+              {COLUMNS.map(c => <option key={c.id} value={c.id}>{t.columns[c.id]}</option>)}
             </select>
             {(searchQuery || filterPais || filterStatus) && (
               <button 
                 onClick={clearFilters}
                 className="px-3 py-2 text-sm text-destructive hover:bg-destructive/10 rounded-lg flex items-center gap-1.5 transition-colors font-medium"
               >
-                <X className="w-4 h-4" /> Limpiar
+                <X className="w-4 h-4" /> {t.clear}
               </button>
             )}
           </div>
@@ -358,7 +364,7 @@ export default function Funil() {
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <div className={`w-2.5 h-2.5 rounded-full ${col.color}`} />
-                      <h2 className="text-sm font-semibold text-foreground">{col.label}</h2>
+                      <h2 className="text-sm font-semibold text-foreground">{t.columns[col.id]}</h2>
                     </div>
                     <span className="text-xs bg-white border border-border text-muted-foreground px-2 py-0.5 rounded-full font-medium shadow-sm">
                       {colLeads.length}
@@ -388,7 +394,7 @@ export default function Funil() {
                         
                         {colLeads.length === 0 && !snapshot.isDraggingOver && (
                           <div className="flex items-center justify-center h-24 text-xs font-medium text-muted-foreground/50 border-2 border-dashed border-border/50 rounded-xl bg-white/30">
-                            Arrastra leads aquí
+                            {t.dragHere}
                           </div>
                         )}
 
@@ -398,7 +404,7 @@ export default function Funil() {
                             className="w-full py-2.5 mt-3 flex items-center justify-center gap-1.5 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors border border-primary/10"
                           >
                             <Plus className="w-3.5 h-3.5" />
-                            Cargar más ({colLeads.length - visibleCounts[col.id]})
+                            {t.loadMore(colLeads.length - visibleCounts[col.id])}
                           </button>
                         )}
                       </div>
@@ -414,15 +420,15 @@ export default function Funil() {
       <AlertDialog open={!!leadToDelete} onOpenChange={(open) => !open && setLeadToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Quitar lead del embudo?</AlertDialogTitle>
+            <AlertDialogTitle>{t.deleteTitle}</AlertDialogTitle>
             <AlertDialogDescription>
-              Esto quitará la tarjeta de tu vista. No te preocupes, el negocio seguirá apareciendo en tus próximas búsquedas.
+              {t.deleteDesc}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Mantener</AlertDialogCancel>
+            <AlertDialogCancel>{t.keep}</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} className="bg-red-500 hover:bg-red-600 focus:ring-red-500 text-white">
-              Sí, quitar
+              {t.confirmDelete}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

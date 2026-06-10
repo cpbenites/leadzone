@@ -5,6 +5,7 @@ import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Route, Routes, Outlet } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
+import { LanguageProvider } from '@/lib/i18n';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import Layout from './components/Layout';
 import Landing from './pages/Landing';
@@ -60,10 +61,12 @@ const AuthenticatedApp = () => {
 function App() {
   return (
     <AuthProvider>
+      <LanguageProvider>
       <QueryClientProvider client={queryClientInstance}>
         <Router>
           <Routes>
             <Route path="/" element={<Landing />} />
+            <Route path="/br" element={<Landing />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:slug" element={<BlogPost />} />
             <Route path="/*" element={<AuthenticatedApp />} />
@@ -71,6 +74,7 @@ function App() {
         </Router>
         <Toaster />
       </QueryClientProvider>
+      </LanguageProvider>
     </AuthProvider>
   );
 }

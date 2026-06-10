@@ -1,6 +1,11 @@
 import { MapPin, Phone, Star, Bookmark, CheckCircle, MessageCircle, Globe, Instagram, Lock } from "lucide-react";
+import { useLang } from "@/lib/i18n";
+import { T } from "@/lib/translations";
 
 export default function LeadCard({ lead, onSave, saved, canViewSocials, onUpgradeClick }) {
+  const { lang } = useLang();
+  const t = T[lang].leadCard;
+
   // Proteções contra dados mal formatados da API
   const safeRating = lead.rating ? Number(lead.rating) : null;
   const safePhone = lead.telefono ? String(lead.telefono) : "";
@@ -9,7 +14,7 @@ export default function LeadCard({ lead, onSave, saved, canViewSocials, onUpgrad
   return (
     <div className="bg-card border border-border rounded-xl p-4 flex flex-col gap-3 hover:shadow-md transition-shadow animate-fade-in">
       <div className="flex items-start justify-between gap-2">
-        <h3 className="font-semibold text-foreground text-sm leading-tight">{lead.nombre_empresa || "Sin nombre"}</h3>
+        <h3 className="font-semibold text-foreground text-sm leading-tight">{lead.nombre_empresa || t.noName}</h3>
         {safeRating && !isNaN(safeRating) && (
           <div className="flex items-center gap-1 shrink-0 bg-warning/10 px-2 py-0.5 rounded-full">
             <Star className="w-3 h-3 text-warning fill-warning" />
@@ -96,9 +101,9 @@ export default function LeadCard({ lead, onSave, saved, canViewSocials, onUpgrad
         }`}
       >
         {saved ? (
-          <><CheckCircle className="w-3.5 h-3.5" /> Lead Guardado</>
+          <><CheckCircle className="w-3.5 h-3.5" /> {t.saved}</>
         ) : (
-          <><Bookmark className="w-3.5 h-3.5" /> Guardar Lead</>
+          <><Bookmark className="w-3.5 h-3.5" /> {t.save}</>
         )}
       </button>
     </div>

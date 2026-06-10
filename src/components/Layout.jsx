@@ -2,24 +2,43 @@ import { Link, useLocation } from "react-router-dom";
 import { MapPin, KanbanSquare, Settings, LogOut, Zap, Shield } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useState, useEffect } from "react";
-
-
+import { useLang } from "@/lib/i18n";
+import { T } from "@/lib/translations";
 
 export default function Layout({ children }) {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const { lang, setLang } = useLang();
+  const t = T[lang].layout;
 
   useEffect(() => {
     base44.auth.me().then(u => setIsAdmin(u?.role === 'admin')).catch(() => {});
   }, []);
 
   const navItems = [
-    { to: "/dashboard", icon: MapPin, label: "Prospección" },
-    { to: "/funil", icon: KanbanSquare, label: "Mi Embudo" },
-    { to: "/configuraciones", icon: Settings, label: "Configuraciones" },
-    ...(isAdmin ? [{ to: "/admin", icon: Shield, label: "Admin" }] : []),
+    { to: "/dashboard", icon: MapPin, label: t.dashboard },
+    { to: "/funil", icon: KanbanSquare, label: t.funil },
+    { to: "/configuraciones", icon: Settings, label: t.config },
+    ...(isAdmin ? [{ to: "/admin", icon: Shield, label: t.admin }] : []),
   ];
+
+  const LangToggle = () => (
+    <div className="flex items-center gap-1 text-xs font-semibold text-sidebar-foreground">
+      <button
+        onClick={() => setLang("es")}
+        className={`px-2 py-1 rounded-md transition-colors ${lang === "es" ? "bg-sidebar-accent text-white" : "hover:text-white"}`}
+      >
+        ES
+      </button>
+      <button
+        onClick={() => setLang("pt")}
+        className={`px-2 py-1 rounded-md transition-colors ${lang === "pt" ? "bg-sidebar-accent text-white" : "hover:text-white"}`}
+      >
+        PT
+      </button>
+    </div>
+  );
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
@@ -32,7 +51,7 @@ export default function Layout({ children }) {
             </div>
             <div>
               <h1 className="text-sm font-bold text-white leading-tight">LeadZone</h1>
-              <p className="text-xs text-sidebar-foreground">B2B Inteligente</p>
+              <p className="text-xs text-sidebar-foreground">{t.tagline}</p>
             </div>
           </div>
         </div>
@@ -57,13 +76,16 @@ export default function Layout({ children }) {
           })}
         </nav>
 
-        <div className="p-3 border-t border-sidebar-border">
+        <div className="p-3 border-t border-sidebar-border space-y-2">
+          <div className="px-3">
+            <LangToggle />
+          </div>
           <button
             onClick={() => base44.auth.logout()}
             className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground hover:bg-destructive/20 hover:text-red-400 transition-all"
           >
             <LogOut className="w-4 h-4" />
-            Cerrar Sesión
+            {t.logout}
           </button>
         </div>
       </aside>
@@ -107,10 +129,13 @@ export default function Layout({ children }) {
                 </Link>
               );
             })}
+            <div className="px-3 pt-3">
+              <LangToggle />
+            </div>
             <button onClick={() => base44.auth.logout()}
               className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground hover:text-red-400 mt-4">
               <LogOut className="w-4 h-4" />
-              Cerrar Sesión
+              {t.logout}
             </button>
           </div>
         </div>
