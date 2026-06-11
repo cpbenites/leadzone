@@ -2,7 +2,7 @@
 
 Uma plataforma SaaS moderna para prospección B2B que permite vendedores e empreendedores encontrar, gerenciar e converter clientes em tempo real.
 
-**[Visite o site](https://leadzone.app)** | **[Documentação](#documentação)** | **[Configuração Local](#configuração-local)**
+**[Visite o site](https://leadzone.cloud/br)** | **[Documentação](#documentação)** | **[Configuração Local](#configuração-local)**
 
 ---
 
