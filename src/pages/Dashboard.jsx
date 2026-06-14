@@ -179,7 +179,7 @@ export default function Dashboard() {
 
     try {
       const res = await base44.functions.invoke("searchLeads", {
-        nicho: nicho ? nicho.trim() : "", ciudad, estado, pais,
+        nicho: nicho ? nicho.trim() : "", cidade: ciudad, estado, pais,
         variationIndex: 0,
         deviceId: deviceId,
         ratingFilter
@@ -231,7 +231,7 @@ export default function Dashboard() {
     setLoadingMore(true);
     try {
       const res = await base44.functions.invoke("searchLeads", {
-        nicho: nicho ? nicho.trim() : "", ciudad, estado, pais,
+        nicho: nicho ? nicho.trim() : "", cidade: ciudad, estado, pais,
         pageToken: nextPageToken || undefined,
         variationIndex: nextVariationIndex ?? 0,
         ratingFilter
