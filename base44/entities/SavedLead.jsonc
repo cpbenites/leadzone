@@ -1,0 +1,74 @@
+{
+  "name": "SavedLead",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email do usu\u00e1rio dono do lead"
+    },
+    "nombre_empresa": {
+      "type": "string",
+      "description": "Nome da empresa"
+    },
+    "segmento": {
+      "type": "string",
+      "description": "Segmento/nicho da empresa"
+    },
+    "telefono": {
+      "type": "string",
+      "description": "Telefone de contato"
+    },
+    "direccion": {
+      "type": "string",
+      "description": "Endere\u00e7o"
+    },
+    "ciudad": {
+      "type": "string",
+      "description": "Cidade"
+    },
+    "estado": {
+      "type": "string",
+      "description": "Estado/Prov\u00edncia"
+    },
+    "pais": {
+      "type": "string",
+      "description": "Pa\u00eds"
+    },
+    "rating": {
+      "type": "number",
+      "description": "Avalia\u00e7\u00e3o no Google"
+    },
+    "place_id": {
+      "type": "string",
+      "description": "ID do Google Places"
+    },
+    "website": {
+      "type": "string",
+      "description": "Site da empresa"
+    },
+    "instagram": {
+      "type": "string",
+      "description": "Instagram da empresa"
+    },
+    "status_funil": {
+      "type": "string",
+      "enum": [
+        "nuevos_leads",
+        "contactados",
+        "proposta_enviada",
+        "negociacao",
+        "fechado",
+        "perdido"
+      ],
+      "default": "nuevos_leads",
+      "description": "Status no funil de vendas"
+    },
+    "notas": {
+      "type": "string",
+      "description": "Notas sobre o lead"
+    }
+  },
+  "required": [
+    "nombre_empresa"
+  ]
+}

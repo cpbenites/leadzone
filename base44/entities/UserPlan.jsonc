@@ -1,0 +1,43 @@
+{
+  "name": "UserPlan",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email do usu\u00e1rio"
+    },
+    "plan": {
+      "type": "string",
+      "enum": [
+        "free",
+        "starter",
+        "pro",
+        "pro_max",
+        "enterprise"
+      ],
+      "default": "free",
+      "description": "Plano atual do usu\u00e1rio"
+    },
+    "searches_today": {
+      "type": "number",
+      "default": 0,
+      "description": "Buscas realizadas hoje"
+    },
+    "searches_this_month": {
+      "type": "number",
+      "default": 0,
+      "description": "Buscas realizadas este m\u00eas"
+    },
+    "last_search_date": {
+      "type": "string",
+      "description": "Data da \u00faltima busca (YYYY-MM-DD)"
+    },
+    "last_reset_month": {
+      "type": "string",
+      "description": "M\u00eas do \u00faltimo reset (YYYY-MM)"
+    }
+  },
+  "required": [
+    "user_email"
+  ]
+}
