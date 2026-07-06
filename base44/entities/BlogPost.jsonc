@@ -1,0 +1,73 @@
+{
+  "name": "BlogPost",
+  "type": "object",
+  "properties": {
+    "titulo": {
+      "type": "string",
+      "description": "T\u00edtulo del art\u00edculo"
+    },
+    "slug": {
+      "type": "string",
+      "description": "URL slug \u00fanico"
+    },
+    "meta_description": {
+      "type": "string",
+      "description": "Descripci\u00f3n para SEO"
+    },
+    "categoria": {
+      "type": "string",
+      "enum": [
+        "prospeccion",
+        "ventas",
+        "crm",
+        "marketing",
+        "casos_de_uso",
+        "herramientas"
+      ],
+      "default": "prospeccion",
+      "description": "Categor\u00eda del art\u00edculo"
+    },
+    "contenido_html": {
+      "type": "string",
+      "description": "Contenido del art\u00edculo en HTML"
+    },
+    "imagen_url": {
+      "type": "string",
+      "description": "URL de la imagen destacada"
+    },
+    "autor": {
+      "type": "string",
+      "description": "Autor del art\u00edculo"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Tags del art\u00edculo"
+    },
+    "tiempo_lectura_min": {
+      "type": "number",
+      "description": "Tiempo de lectura en minutos"
+    },
+    "publicado": {
+      "type": "boolean",
+      "default": true,
+      "description": "Si el art\u00edculo est\u00e1 publicado"
+    },
+    "idioma": {
+      "type": "string",
+      "enum": [
+        "es",
+        "pt"
+      ],
+      "default": "es",
+      "description": "Idioma del art\u00edculo"
+    }
+  },
+  "required": [
+    "titulo",
+    "slug",
+    "contenido_html"
+  ]
+}
